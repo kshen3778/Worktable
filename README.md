@@ -1,4 +1,4 @@
 # Workbench
-Medical imaging package for creating end-to-end radiotherapy pipelines
+Medical imaging package for creating radiotherapy machine learning pipelines.
 
-Creators: Kevin Shen, Joseph Marsilla
+Development Team: Kevin Shen, Joseph Marsilla

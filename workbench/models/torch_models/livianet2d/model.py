@@ -3,7 +3,7 @@ Taken from https://github.com/josedolz/LiviaNet_pytorch
 originally LiviaNet
 '''
 
-from Blocks import *
+from .parts import *
 import torch.nn.init as init
 import torch.nn.functional as F
 import pdb

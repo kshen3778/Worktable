@@ -1,16 +1,16 @@
-from workbench.models.anatomynet import AnatomyNet3D, FocalDiceLoss
-from workbench.models.wolnyet import WolnyUNet3D, ResUNet3D
-from workbench.models.vnet import VNet3D
-from workbench.models.unet3d import UNet3D
-from workbench.models.tiramisu import FCDenseNet
-from workbench.models.pykao import Modified3DUNet
-from workbench.models.pipofan import PIPOFAN3D
-from workbench.models.highresnet import HRNet
-from workbench.models.unet3plus import UNet_3Plus, UNet_3Plus_DeepSup, UNet_3Plus_DeepSup_CGM
-from workbench.models.unetplusplus import VGGUNet, NestedUNet
-from workbench.models.rsanet import RSANet
-from workbench.models.hyperdensenet import HyperDenseNet, HyperDenseNet_2Mod
-from workbench.models.densevoxel import DenseVoxelNet
-from workbench.models.mednet import ResNetMed3D, generate_resnet3d
-from workbench.models.highresnetv2 import HighResNet3D
-from workbench.models.skipdensenet import SkipDenseNet3D
+from .torch_models import AnatomyNet3D, FocalDiceLoss
+from .torch_models import WolnyUNet3D, ResUNet3D
+from .torch_models import VNet3D
+from .torch_models import UNet3D
+from .torch_models import FCDenseNet
+from .torch_models import Modified3DUNet
+from .torch_models import PIPOFAN3D
+from .torch_models import HRNet
+from .torch_models import UNet_3Plus, UNet_3Plus_DeepSup, UNet_3Plus_DeepSup_CGM
+from .torch_models import VGGUNet, NestedUNet
+from .torch_models import RSANet
+from .torch_models import HyperDenseNet, HyperDenseNet_2Mod
+from .torch_models import DenseVoxelNet
+from .torch_models import ResNetMed3D, generate_resnet3d
+from .torch_models import HighResNet3D
+from .torch_models import SkipDenseNet3D
