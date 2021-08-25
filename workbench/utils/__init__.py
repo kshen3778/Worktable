@@ -1,1 +1,1 @@
-from workbench.utils.contours import numpy_to_contour
+from workbench.utils.contours import mask_to_contour

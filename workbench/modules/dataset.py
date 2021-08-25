@@ -10,15 +10,23 @@ class WorkbenchDataset:
         """
         pass
 
+    def remove_transformations(self):
+        """
+        Remove all transformations
+        """
+        pass
+
     def save_profile(self, name, save_location):
         """
         Save a workbench profile file for this dataset
         """
+        pass
 
     def load_from_profile(self, profile_location):
         """
         Load a dataset profile from a workbench file
         """
+        pass
 
     def get_profile(self):
         """
@@ -33,17 +41,23 @@ class WorkbenchDataset:
         Overall: min, max, std, percentiles, spacing, number of classes, number of pixels/voxels per class
         Individual: same as above but for each individual image
         """
+        pass
 
-    def create_new_version(self, preprocessing=None, new_copy=False, new_base_dir=None):
+    def apply_changes(self, preprocessing):
         """
-        Create a new dataset version on disk.
+        Apply preprocessing and modify this current copy
+        """
+        pass
+
+    def create_new_version(self, preprocessing=None, new_base_dir=None, save_profile=False):
+        """
+        Create a new dataset version on disk (that can be loaded through WorkbenchDataset)
 
         Users can do preprocessing by themselves or pass it into our preprocessing flag.
 
-        Apply all preprocessing and either modify
-        the original copy or create a new copy at a new location.
+        Create a new copy at a new location and apply all preprocessing
 
-        Returns new WorkbenchDataset object.
+        Optionally save the profile as a workbench file
         """
         pass
 

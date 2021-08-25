@@ -3,7 +3,9 @@ import importlib
 import torch.nn as nn
 
 from .buildingblocks import Encoder, Decoder, DoubleConv, ExtResNetBlock, SingleConv
-from .utils import create_feature_maps
+
+def create_feature_maps(init_channel_number, number_of_fmaps):
+    return [init_channel_number * 2 ** k for k in range(number_of_fmaps)]
 
 class WolnyUNet3D(nn.Module):
     """

@@ -1,6 +1,9 @@
 import torch.nn as nn
 from .parts import *
 
+"""
+https://github.com/wentaozhu/AnatomyNet-for-anatomical-segmentation/blob/master/src/baselineSERes18Conc.py
+"""
 
 class AnatomyNet3D(nn.Module):
     def __init__(

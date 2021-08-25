@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from parts import *
+from .parts import *
 
 # 2D version taken from https://github.com/shreyaspadhy/UNet-Zoo/blob/master/CLSTM.py
 class BDCLSTM(nn.Module):

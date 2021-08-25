@@ -55,17 +55,3 @@ class DenseVoxelNet(nn.Module):
         t = self.transpose(t)
         y2 = self.conv_final(t)
         return y1, y2
-
-    # def test(self, device='cpu'):
-    #     a = torch.rand(1, self.in_channels, 8, 8, 8)
-    #     ideal_out = torch.rand(1, self.classes, 8, 8, 8)
-    #     summary(self.to(torch.device(device)), (self.in_channels, 8, 8, 8), device=device)
-    #     b, c = self.forward(a)
-    #     import torchsummaryX
-    #     torchsummaryX.summary(self, a.to(device))
-    #     assert ideal_out.shape == b.shape
-    #     assert ideal_out.shape == c.shape
-    #     print("Test DenseVoxelNet is complete")
-
-# model = DenseVoxelNet(in_channels=1, classes=3)
-# model.test()
