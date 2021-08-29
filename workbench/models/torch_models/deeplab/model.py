@@ -29,6 +29,6 @@ class MS_Deeplab(nn.Module):
         return out
 
 
-def Deeplabv3(num_classes=3, factor=1):
+def DeepLabV3(num_classes=3, factor=1):
     model = MS_Deeplab(Bottleneck, num_classes, factor)
     return model

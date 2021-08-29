@@ -1,1 +1,1 @@
-from .model import Deeplabv3
+from .model import DeepLabV3

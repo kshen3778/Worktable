@@ -15,3 +15,7 @@ from .mednet import ResNetMed3D, generate_resnet3d
 from .highresnetv2 import HighResNet3D
 from .skipdensenet import SkipDenseNet3D
 from .bdclstm import BDCLSTM, UNetSmall
+from .deeplab import DeepLabV3
+from .deepmind import DeepUNet
+from .elektronn3 import EK3UNet
+

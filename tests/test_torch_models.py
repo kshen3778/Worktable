@@ -17,6 +17,12 @@ def test_bdclstm():
     output = model(in_tensor, in_tensor2, in_tensor3)
     assert output.shape == ideal_out.shape
 
+def test_deeplab():
+    pass
+
+def test_deepmind():
+    pass
+
 def test_densevoxel():
     model = DenseVoxelNet(in_channels=1, num_classes=3)
     in_tensor = torch.rand(1, 1, 8, 8, 8)
@@ -24,6 +30,15 @@ def test_densevoxel():
     output = model(in_tensor)
     assert output[0].shape == ideal_out.shape
     assert output[1].shape == ideal_out.shape
+
+def test_elektronn3():
+    model = EK3UNet()
+    in_tensor = torch.rand(1, 1, 8, 8, 8)
+    ideal_out = torch.rand(1, 2, 8, 8, 8)
+    output = model(in_tensor)
+    assert output.shape == ideal_out.shape
+
+
 
 
 

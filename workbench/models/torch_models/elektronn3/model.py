@@ -13,13 +13,18 @@ from .parts import *
 
 class EK3UNet(nn.Module):
     """Modified version of U-Net, adapted for 3D biomedical image segmentation
+
     The U-Net is a convolutional encoder-decoder neural network.
     Contextual spatial information (from the decoding, expansive pathway)
     about an input tensor is merged with information representing the
     localization of details (from the encoding, compressive pathway).
+
     - Original paper: https://arxiv.org/abs/1505.04597
     - Base implementation: https://github.com/jaxony/unet-pytorch
+
+
     Modifications to the original paper (@jaxony):
+
     - Padding is used in size-3-convolutions to prevent loss
       of border pixels.
     - Merging outputs does not require cropping due to (1).
@@ -31,7 +36,9 @@ class EK3UNet(nn.Module):
       to reduce channel dimensionality by a factor of 2.
       This channel halving happens with the convolution in
       the tranpose convolution (specified by upmode='transpose').
+
     Additional modifications (@mdraw):
+
     - Operates on 3D image data (5D tensors) instead of 2D data
     - Uses 3D convolution, 3D pooling etc. by default
     - Each network block pair (the two corresponding submodules in the
@@ -45,7 +52,18 @@ class EK3UNet(nn.Module):
       Note: If planar blocks are used, the input patch size should be
       adapted by reducing depth and increasing height and width of inputs.
     - Configurable activation function.
-    - Optional batch normalization
+    - Optional normalization
+
+    Gradient checkpointing can be used to reduce memory consumption while
+    training. To make use of gradient checkpointing, just run the
+    ``forward_gradcp()`` instead of the regular ``forward`` method.
+    This makes the backward pass a bit slower, but the memory savings can be
+    huge (usually around 20% - 50%, depending on hyperparameters). Checkpoints
+    are made after each network *block*.
+    See https://pytorch.org/docs/master/checkpoint.html and
+    https://arxiv.org/abs/1604.06174 for more details.
+    Gradient checkpointing is not supported in TorchScript mode.
+
     Args:
         in_channels: Number of input channels
             (e.g. 1 for single-grayscale inputs, 3 for RGB images)
@@ -57,6 +75,7 @@ class EK3UNet(nn.Module):
             in the encoder pathway. The decoder (upsampling/upconvolution)
             pathway will consist of `n_blocks - 1` blocks.
             Increasing `n_blocks` has two major effects:
+
             - The network will be deeper
               (n + 1 -> 4 additional convolution layers)
             - Since each block causes one additional downsampling, more
@@ -65,6 +84,7 @@ class EK3UNet(nn.Module):
               (n + 1 -> receptive field is approximately doubled in each
               dimension, except in planar blocks, in which it is only
               doubled in the H and W image dimensions)
+
             **Important note**: Always make sure that the spatial shape of
             your input is divisible by the number of blocks, because
             else, concatenating downsampled features will fail.
@@ -73,6 +93,7 @@ class EK3UNet(nn.Module):
             choice of `merge_mode`.
         up_mode: Upsampling method in the decoder pathway.
             Choices:
+
             - 'transpose' (default): Use transposed convolution
               ("Upconvolution")
             - 'resizeconv_nearest': Use resize-convolution with nearest-
@@ -87,10 +108,12 @@ class EK3UNet(nn.Module):
         merge_mode: How the features from the encoder pathway should
             be combined with the decoder features.
             Choices:
+
             - 'concat' (default): Concatenate feature maps along the
               `C` axis, doubling the number of filters each block.
             - 'add': Directly add feature maps (like in ResNets).
               The number of filters thus stays constant in each block.
+
             Note: According to https://arxiv.org/abs/1701.03056, feature
             concatenation ('concat') generally leads to better model
             accuracy than 'add' in typical medical image segmentation
@@ -111,7 +134,9 @@ class EK3UNet(nn.Module):
         activation: Name of the non-linear activation function that should be
             applied after each network layer.
             Choices (see https://arxiv.org/abs/1505.00853 for details):
+
             - 'relu' (default)
+            - 'silu': Sigmoid Linear Unit (SiLU, aka Swish)
             - 'leaky': Leaky ReLU (slope 0.1)
             - 'prelu': Parametrized ReLU. Best for training accuracy, but
               tends to increase overfitting.
@@ -126,6 +151,7 @@ class EK3UNet(nn.Module):
             but it delivers better results this way
             (see https://redd.it/67gonq).
             Choices:
+
             - 'group' for group normalization (G=8)
             - 'group<G>' for group normalization with <G> groups
               (e.g. 'group16') for G=16
@@ -142,6 +168,7 @@ class EK3UNet(nn.Module):
             layer of each block, in order to save resources. This was also
             the default behavior before this option was introduced.
         dim: Spatial dimensionality of the network. Choices:
+
             - 3 (default): 3D mode. Every block fully works in 3D unless
               it is excluded by the ``planar_blocks`` setting.
               The network expects and operates on 5D input tensors
@@ -149,6 +176,7 @@ class EK3UNet(nn.Module):
             - 2: Every block and every operation works in 2D, expecting
               4D input tensors (N, C, H, W).
         conv_mode: Padding mode of convolutions. Choices:
+
             - 'same' (default): Use SAME-convolutions in every layer:
               zero-padding inputs so that all convolutions preserve spatial
               shapes and don't produce an offset at the boundaries.
@@ -158,6 +186,7 @@ class EK3UNet(nn.Module):
               are automatically cropped to compatible shapes so they can be
               merged with decoder features.
               Advantages:
+
               - Less resource consumption than SAME because feature maps
                 have reduced sizes especially in deeper layers.
               - No "fake" data (that is, the zeros from the SAME-padding)
@@ -175,7 +204,9 @@ class EK3UNet(nn.Module):
                 complexity of the learning task and allow the network to
                 specialize better on understanding the actual, unaltered
                 inputs (effectively requiring less parameters to fit).
+
               Disadvantages:
+
               - Using this mode poses some additional constraints on input
                 sizes and requires you to center-crop your targets,
                 so it's harder to use in practice than the 'same' mode.
@@ -184,17 +215,7 @@ class EK3UNet(nn.Module):
                 the borders. Most notably this is the case if you do training
                 and inference not on small patches, but on complete images in
                 a single step.
-        checkpointing: If ``True``, use gradient checkpointing to reduce memory
-            consumption while training. This makes the backward pass a bit
-            slower, but the memory savings can be huge (usually around
-            20% - 50%, depending on hyperparameters).
-            Checkpoints are made after each network *block*.
-            See https://pytorch.org/docs/master/checkpoint.html and
-            https://arxiv.org/abs/1604.06174 for more details.
     """
-
-    __constants__ = ['down_convs', 'up_convs']
-
     def __init__(
             self,
             in_channels: int = 1,
@@ -211,7 +232,6 @@ class EK3UNet(nn.Module):
             full_norm: bool = True,
             dim: int = 3,
             conv_mode: str = 'same',
-            checkpointing: bool = False
     ):
         super().__init__()
 
@@ -266,7 +286,6 @@ class EK3UNet(nn.Module):
         self.conv_mode = conv_mode
         self.activation = activation
         self.dim = dim
-        self.checkpointing = checkpointing
 
         self.down_convs = nn.ModuleList()
         self.up_convs = nn.ModuleList()
@@ -283,8 +302,8 @@ class EK3UNet(nn.Module):
 
         # create the encoder pathway and add to a list
         for i in range(n_blocks):
-            outs = self.start_filts * (2**i)
             ins = self.in_channels if i == 0 else outs
+            outs = self.start_filts * (2**i)
             pooling = True if i < n_blocks - 1 else False
             planar = i in self.planar_blocks
 
@@ -327,8 +346,7 @@ class EK3UNet(nn.Module):
 
         self.apply(self.weight_init)
 
-    @staticmethod
-    def weight_init(m):
+    def weight_init(self, m):
         if isinstance(m, GridAttention):
             return
         if isinstance(m, (nn.Conv3d, nn.Conv2d, nn.ConvTranspose3d, nn.ConvTranspose2d)):
@@ -336,16 +354,14 @@ class EK3UNet(nn.Module):
             if getattr(m, 'bias') is not None:
                 nn.init.constant_(m.bias, 0)
 
+
     def forward(self, x):
         encoder_outs = []
 
         # Encoder pathway, save outputs for merging
         i = 0  # Can't enumerate because of https://github.com/pytorch/pytorch/issues/16123
         for module in self.down_convs:
-            if self.checkpointing:
-                x, before_pool = checkpoint(module, x)
-            else:
-                x, before_pool = module(x)
+            x, before_pool = module(x)
             encoder_outs.append(before_pool)
             i += 1
 
@@ -353,15 +369,30 @@ class EK3UNet(nn.Module):
         i = 0
         for module in self.up_convs:
             before_pool = encoder_outs[-(i+2)]
-            if self.checkpointing:
-                x = checkpoint(module, before_pool, x)
-            else:
-                x = module(before_pool, x)
+            x = module(before_pool, x)
             i += 1
 
         # No softmax is used, so you need to apply it in the loss.
         x = self.conv_final(x)
         # Uncomment the following line to temporarily store output for
         #  receptive field estimation using fornoxai/receptivefield:
+        # self.feature_maps = [x]  # Currently disabled to save memory
+        return x
+
+    def forward_gradcp(self, x):
+        """``forward()`` implementation with gradient checkpointing enabled.
+        Apart from checkpointing, this behaves the same as ``forward()``."""
+        encoder_outs = []
+        i = 0
+        for module in self.down_convs:
+            x, before_pool = checkpoint(module, x)
+            encoder_outs.append(before_pool)
+            i += 1
+        i = 0
+        for module in self.up_convs:
+            before_pool = encoder_outs[-(i+2)]
+            x = checkpoint(module, before_pool, x)
+            i += 1
+        x = self.conv_final(x)
         # self.feature_maps = [x]  # Currently disabled to save memory
         return x

@@ -1,4 +1,6 @@
-class WorkbenchDataset:
+from torch.utils.data import Dataset
+
+class WorkbenchDataset(Dataset):
 
     def __init__(self, base_dir, images, labels=None, paths_file=None):
         pass
@@ -58,6 +60,14 @@ class WorkbenchDataset:
         Create a new copy at a new location and apply all preprocessing
 
         Optionally save the profile as a workbench file
+        """
+        pass
+
+    def get_subset(self, items):
+        """
+        Get a subset of the data and return a WorkbenchDataset
+
+        Items is a list of indices of
         """
         pass
 
