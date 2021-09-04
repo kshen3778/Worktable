@@ -148,12 +148,9 @@ class WorkbenchDataset(Dataset):
 
     def create_new_version(self,
                            new_base_dir=None,
-                           preprocessing=None,
                            save_profile=True):
         """
         Create a new dataset version on disk (that can be loaded through WorkbenchDataset)
-
-        Users can do preprocessing by themselves or pass it into our preprocessing flag.
 
         Create a new copy at a new location and apply all preprocessing
 
