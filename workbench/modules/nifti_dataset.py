@@ -1,4 +1,7 @@
+from itertools import chain
+
 import nibabel as nib
+import numpy as np
 from workbench.modules.dataset import WorkbenchDataset
 
 class NIFTIDataset(WorkbenchDataset):
@@ -19,14 +22,21 @@ class NIFTIDataset(WorkbenchDataset):
         if calculate_statistics:
             self.calculate_statistics()
 
-    def apply_changes(self, preprocessing=[], preprocess_labels=True, input_format="param"):
+    def apply_changes(self,
+                      preprocessing=[],
+                      preprocess_labels=True,
+                      input_format="param",
+                      image_key=None,
+                      label_key=None):
         """
 
         Args:
             preprocessing: list of preprocessing functions
             preprocess_labels: whether labels will be preprocessed too
             input_format: input format to feed to preprocess function if labels exist:
-                "param" is func(x, y), "tuple" is func((x, y))
+                "param" is func(x, y), "tuple" is func((x, y)), "dict" is func({"image":x, "label":y})
+            image_key: if input_format is "dict" this is the name of the image key
+            label_key: if input_format is "dict" this is the name of the label key
 
         Returns:
             Nothing
@@ -57,6 +67,8 @@ class NIFTIDataset(WorkbenchDataset):
                 if preprocess_labels:
                     if input_format == "tuple":
                         img_data, label_data = func((img.get_fdata(), label.get_fdata()))
+                    elif input_format == "dict":
+                        img_data, label_data = func({image_key: img, label_key: label})
                     else:
                         img_data, label_data = func(img, label)
                 else:
@@ -73,22 +85,81 @@ class NIFTIDataset(WorkbenchDataset):
         self.profile["preprocessing"].extend(preprocessing)
 
 
-    def calculate_statistics(self, percentiles=[]):
-        # Max/min
+    def calculate_statistics(self,
+                             foreground_threshold=0,
+                             percentiles=[],
+                             sampling_interval=1):
+        voxel_sum = 0.0
+        voxel_square_sum = 0.0
+        voxel_max, voxel_min = [], []
+        voxel_ct = 0
+        all_intensities = []
 
-        # Mean
+        dataset = zip(self.profile["images"], self.profile["labels"])
+        for item in dataset:
 
-        # Std
+            image = nib.load(item[0]).get_fdata()
+            label = nib.load(item[1]).get_fdata()
 
-        # Percentiles
+            # max/min
+            image_max = image.max().item()
+            image_min = image.min().item()
 
-        # Image spacing
+            voxel_max.append(image_max)
+            voxel_min.append(image_min)
 
-        # Number of classes
+            image_foreground = image[np.where(label > foreground_threshold)]
+            image_voxel_ct = len(image_foreground)
+            voxel_ct += image_voxel_ct
 
-        # Number of pixels/voxels per class
+            image_voxel_sum = image_foreground.sum()
+            voxel_sum += image_voxel_sum
 
-        pass
+            image_voxel_square_sum = np.square(image_foreground).sum()
+            voxel_square_sum += image_voxel_square_sum
+
+            # mean, std
+            image_mean = (image_voxel_sum / image_voxel_ct).item()
+            image_std = (np.sqrt(image_voxel_square_sum / image_voxel_ct - image_mean ** 2)).item()
+
+            intensities = image[np.where(label > foreground_threshold)].tolist()
+            if sampling_interval > 1:
+                intensities = intensities[::sampling_interval]
+            all_intensities.append(intensities)
+
+            # percentiles
+            image_percentile_values = np.percentile(
+                intensities, percentiles
+            )
+
+            # median
+            image_median = np.median(intensities)
+
+            indiv_stats = {
+                "image": item[0],
+                "label": item[1],
+                "max": image_max,
+                "min": image_min,
+                "mean": image_mean,
+                "std": image_std,
+                "percentile": percentiles,
+                "percentile_values": image_percentile_values,
+                "median": image_median
+            }
+            self.profile["statistics"]["image_statistics"].append(indiv_stats)
+
+        self.profile["statistics"]["max"], self.profile["statistics"]["min"] = max(voxel_max), min(voxel_min)
+        self.profile["statistics"]["mean"] = (voxel_sum / voxel_ct).item()
+        self.profile["statistics"]["std"] = (np.sqrt(voxel_square_sum / voxel_ct - self.data_mean ** 2)).item()
+
+        all_intensities = list(chain(*all_intensities))
+        self.profile["statistics"]["percentile"] = percentiles
+        self.profile["statistics"]["percentile_values"] = np.percentile(
+            all_intensities, percentiles
+        )
+        self.profile["statistics"]["median"] = np.median(all_intensities)
+
+        # TODO: Image spacing, Number of classes, Number of pixels/voxels per class
 
     def create_new_version(self,
                            new_base_dir=None,

@@ -121,7 +121,7 @@ class WorkbenchDataset(Dataset):
         """
         return self.profile
 
-    def calculate_statistics(self, percentiles=[]):
+    def calculate_statistics(self, foreground_threshold=0, percentiles=[]):
         """
         Min, max, mean, std, percentiles, spacing, number of classes, number of pixels/voxels per class
         Calculate first 6 for individual images as well
