@@ -1,9 +1,13 @@
+from distutils.dir_util import copy_tree
 import os
 import json
+import pathlib
+import time
 
 import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose
+
 
 class WorkbenchDataset(Dataset):
 
@@ -77,7 +81,6 @@ class WorkbenchDataset(Dataset):
             return Compose(transform_list)
         return transform_list
 
-
     def remove_transformations(self, train=True):
         """
         Remove all transformations
@@ -91,6 +94,9 @@ class WorkbenchDataset(Dataset):
         """
         Save a workbench profile file for this dataset
         """
+
+        self.profile["name"] = name
+
         # Default save location if none
         if save_location is None:
             save_location = self.profile["base_dir"]
@@ -121,7 +127,7 @@ class WorkbenchDataset(Dataset):
         """
         return self.profile
 
-    def calculate_statistics(self, foreground_threshold=0, percentiles=[]):
+    def calculate_statistics(self, foreground_threshold=0, percentiles=[], sampling_interval=1):
         """
         Min, max, mean, std, percentiles, spacing, number of classes, number of pixels/voxels per class
         Calculate first 6 for individual images as well
@@ -148,15 +154,27 @@ class WorkbenchDataset(Dataset):
 
     def create_new_version(self,
                            new_base_dir=None,
+                           name=None,
                            save_profile=True):
         """
         Create a new dataset version on disk (that can be loaded through WorkbenchDataset)
 
-        Create a new copy at a new location and apply all preprocessing
-
         Save the profile as a workbench file (in the new base dir)
         """
-        return NotImplementedError
+
+        # Create new base dir if it doesn't already exist
+        pathlib.Path(new_base_dir).mkdir(parents=True, exist_ok=True)
+
+        # Copy contents
+        copy_tree(self.profile["base_dir"], new_base_dir)
+
+        # Save profile
+        if save_profile:
+            if name is None:
+                # default name from timestamp
+                name = "version." + str(time.strftime("%Y%m%d-%H%M%S"))
+            self.save_profile(name, new_base_dir)
+
 
     def get_subset(self, items):
         """
@@ -170,6 +188,7 @@ class WorkbenchDataset(Dataset):
         """
         Set string names for integer class labels
         """
+        return NotImplementedError
 
     def __getitem__(self, item):
         return NotImplementedError

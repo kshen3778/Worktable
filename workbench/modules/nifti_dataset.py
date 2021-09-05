@@ -1,8 +1,10 @@
 from itertools import chain
+import os
 
 import nibabel as nib
 import numpy as np
 from workbench.modules.dataset import WorkbenchDataset
+
 
 class NIFTIDataset(WorkbenchDataset):
 
@@ -58,8 +60,10 @@ class NIFTIDataset(WorkbenchDataset):
             # Load image as numpy
             img, label = None, None
             if preprocess_labels:
-                img = nib.load(item[0])
-                label = nib.load(item[1])
+                img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
+                label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
+                img = nib.load(img_path)
+                label = nib.load(label_path)
             else:
                 img = nib.load(item)
 
@@ -97,9 +101,10 @@ class NIFTIDataset(WorkbenchDataset):
 
         dataset = zip(self.profile["images"], self.profile["labels"])
         for item in dataset:
-
-            image = nib.load(item[0]).get_fdata()
-            label = nib.load(item[1]).get_fdata()
+            img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
+            label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
+            image = nib.load(img_path).get_fdata()
+            label = nib.load(label_path).get_fdata()
 
             # max/min
             image_max = image.max().item()
@@ -148,6 +153,7 @@ class NIFTIDataset(WorkbenchDataset):
             }
             self.profile["statistics"]["image_statistics"].append(indiv_stats)
 
+        # Overall statistics
         self.profile["statistics"]["max"], self.profile["statistics"]["min"] = max(voxel_max), min(voxel_min)
         self.profile["statistics"]["mean"] = (voxel_sum / voxel_ct).item()
         self.profile["statistics"]["std"] = (np.sqrt(voxel_square_sum / voxel_ct - self.data_mean ** 2)).item()
@@ -161,7 +167,3 @@ class NIFTIDataset(WorkbenchDataset):
 
         # TODO: Image spacing, Number of classes, Number of pixels/voxels per class
 
-    def create_new_version(self,
-                           new_base_dir=None,
-                           save_profile=True):
-        pass
