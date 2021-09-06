@@ -16,7 +16,10 @@ class WorkbenchDataset(Dataset):
                  images=None,
                  labels=None,
                  file_path_or_dataframe=None,
-                 get_item_as_dict=True):
+                 calculate_statistics=False,
+                 get_item_as_dict=False,
+                 image_key=None,
+                 label_key=None):
         """
         base_dir needs to be passed no matter what (all files underneath base_dir will be tracked for create_version)
         base_dir is also needed to store the .workbench file
@@ -38,6 +41,8 @@ class WorkbenchDataset(Dataset):
             self.profile["labels"] = labels
 
         self.profile["get_item_as_dict"] = get_item_as_dict
+        self.profile["get_item_keys"]["image"] = image_key
+        self.profile["get_item_keys"]["labels"] = label_key
 
         # If loaded via file or dataframe
         if file_path_or_dataframe is not None:
@@ -51,10 +56,13 @@ class WorkbenchDataset(Dataset):
                 self.profile["dataframe"] = pd.read_csv(file_path_or_dataframe)
 
             # extract paths
-            self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy()
+            self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy().tolist()
             if labels is not None:
-                self.profile["labels"] = self.profile["dataframe"][self.profile["labels"]].to_numpy()
+                self.profile["labels"] = self.profile["dataframe"][self.profile["labels"]].to_numpy().tolist()
 
+        # Option to calculate statistics directly as init
+        if calculate_statistics:
+            self.calculate_statistics()
 
     def attach_transformations(self, transforms, train=True):
         """
@@ -145,7 +153,12 @@ class WorkbenchDataset(Dataset):
             return self.profile["statistics"]
         return None
 
-    def apply_changes(self, preprocessing):
+    def apply_changes(self,
+                      preprocessing=[],
+                      preprocess_labels=True,
+                      input_format="param",
+                      image_key=None,
+                      label_key=None):
         """
         Apply preprocessing and modify this current copy
         """
@@ -174,6 +187,9 @@ class WorkbenchDataset(Dataset):
                 # default name from timestamp
                 name = "version." + str(time.strftime("%Y%m%d-%H%M%S"))
             self.save_profile(name, new_base_dir)
+            print("New workbench profile has been created at: ", os.path.join(new_base_dir, name + ".workbench.json"))
+
+        print("New version has been created at: ", new_base_dir)
 
 
     def get_subset(self, items):
@@ -190,7 +206,7 @@ class WorkbenchDataset(Dataset):
         """
         return NotImplementedError
 
-    def __getitem__(self, item):
+    def __getitem__(self, index):
         return NotImplementedError
 
     def __len__(self):

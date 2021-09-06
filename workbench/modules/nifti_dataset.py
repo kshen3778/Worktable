@@ -13,16 +13,14 @@ class NIFTIDataset(WorkbenchDataset):
                  images=None,
                  labels=None,
                  file_path_or_dataframe=None,
+                 calculate_statistics=False,
                  get_item_as_dict=True,
-                 calculate_statistics=False):
+                 image_key=None,
+                 label_key=None):
         """
         calculate_statistics decides whether to run calculate_statistics() on init
         """
         super().__init__(base_dir, images, labels, file_path_or_dataframe, get_item_as_dict)
-
-        # Option to calculate statistics directly as init
-        if calculate_statistics:
-            self.calculate_statistics()
 
     def apply_changes(self,
                       preprocessing=[],
@@ -33,7 +31,7 @@ class NIFTIDataset(WorkbenchDataset):
         """
 
         Args:
-            preprocessing: list of preprocessing functions
+            preprocessing: list of preprocessing classes
             preprocess_labels: whether labels will be preprocessed too
             input_format: input format to feed to preprocess function if labels exist:
                 "param" is func(x, y), "tuple" is func((x, y)), "dict" is func({"image":x, "label":y})
@@ -87,7 +85,6 @@ class NIFTIDataset(WorkbenchDataset):
 
         # save preprocessing records in profile
         self.profile["preprocessing"].extend(preprocessing)
-
 
     def calculate_statistics(self,
                              foreground_threshold=0,
@@ -167,3 +164,17 @@ class NIFTIDataset(WorkbenchDataset):
 
         # TODO: Image spacing, Number of classes, Number of pixels/voxels per class
 
+    def __getitem__(self, index):
+        img_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["images"][index]))
+        label_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["labels"][index]))
+        image = nib.load(img_path).get_fdata()
+        label = nib.load(label_path).get_fdata()
+        if self.profile["get_item_as_dict"]:
+            # return as dictionary
+            item = {self.profile["get_item_keys"]["image"]: image,
+                    self.profile["get_item_keys"]["labels"]: label}
+            return item
+        return image, label
+
+    def __len__(self):
+        return len(self.profile["images"])
