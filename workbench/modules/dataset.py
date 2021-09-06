@@ -33,10 +33,14 @@ class WorkbenchDataset(Dataset):
         calculate_statistics decides whether to run calculate_statistics() on init
         """
 
-        self.profile = {
-            "base_dir": os.path.abspath(base_dir),
-            "images": images
-        }
+        self.profile = {}
+
+        if base_dir is not None:
+            self.profile["base_dir"] = os.path.abspath(base_dir)
+
+        if images is not None:
+            self.profile["images"] = images
+
         if labels is not None:
             self.profile["labels"] = labels
 
@@ -52,10 +56,14 @@ class WorkbenchDataset(Dataset):
                 # is a dataframe
                 self.profile["dataframe"] = file_path_or_dataframe
             else:
-                # if a csv file
+                # Make sure it is a relative path from base_dir
+                if file_path_or_dataframe.startswith(self.profile["base_dir"] + os.sep):
+                    file_path_or_dataframe = os.path.relpath(file_path_or_dataframe, self.profile["base_dir"])
+
+                # if is a csv file
                 self.profile["file_path"] = file_path_or_dataframe
                 # convert csv file to dataframe
-                self.profile["dataframe"] = pd.read_csv(file_path_or_dataframe)
+                self.profile["dataframe"] = pd.read_csv(os.path.join(self.profile["base_dir"], file_path_or_dataframe))
 
             # extract paths
             self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy().tolist()
@@ -63,8 +71,6 @@ class WorkbenchDataset(Dataset):
                 self.profile["labels"] = self.profile["dataframe"][self.profile["labels"]].to_numpy().tolist()
 
             self.profile.pop("dataframe", None)  # delete dataframe to save space
-
-        self.profile["statistics"] = {}
 
         # Option to calculate statistics directly as init
         if calculate_statistics:
@@ -123,6 +129,7 @@ class WorkbenchDataset(Dataset):
         with open(save_path, 'w') as fp:
             json.dump(self.profile, fp, indent=4)
 
+        print("Profile saved at: ", save_path)
 
     def load_from_profile(self, path):
         """
@@ -130,7 +137,6 @@ class WorkbenchDataset(Dataset):
         """
         with open(path) as json_file:
             self.profile = json.load(json_file)
-
 
     def get_profile(self):
         """
@@ -158,6 +164,7 @@ class WorkbenchDataset(Dataset):
     def apply_changes(self,
                       preprocessing=[],
                       preprocess_labels=True,
+                      recalculate_statistics=True,
                       input_format="param",
                       image_key=None,
                       label_key=None):
@@ -165,7 +172,6 @@ class WorkbenchDataset(Dataset):
         Apply preprocessing and modify this current copy
         """
         return NotImplementedError
-
 
     def create_new_version(self,
                            new_base_dir=None,
@@ -189,9 +195,15 @@ class WorkbenchDataset(Dataset):
                 # default name from timestamp
                 name = "version." + str(time.strftime("%Y%m%d-%H%M%S"))
             self.save_profile(name, new_base_dir)
-            print("New workbench profile has been created at: ", os.path.join(new_base_dir, name + ".workbench.json"))
 
-        print("New version has been created at: ", new_base_dir)
+            # Edit in new base dir path
+            with open(os.path.join(os.path.abspath(new_base_dir), name + ".workbench.json")) as json_file:
+                profile = json.load(json_file)
+                profile["base_dir"] = os.path.abspath(new_base_dir)
+                with open(os.path.join(os.path.abspath(new_base_dir), name + ".workbench.json"), 'w') as fp:
+                    json.dump(profile, fp, indent=4)
+
+        print("New dataset version has been created at: ", new_base_dir)
 
 
     def get_subset(self, items):
