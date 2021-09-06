@@ -14,13 +14,14 @@ class NIFTIDataset(WorkbenchDataset):
                  labels=None,
                  file_path_or_dataframe=None,
                  calculate_statistics=False,
-                 get_item_as_dict=True,
+                 get_item_as_dict=False,
                  image_key=None,
                  label_key=None):
         """
         calculate_statistics decides whether to run calculate_statistics() on init
         """
-        super().__init__(base_dir, images, labels, file_path_or_dataframe, get_item_as_dict)
+        super().__init__(base_dir, images, labels, file_path_or_dataframe,
+                         calculate_statistics, get_item_as_dict, image_key, label_key)
 
     def apply_changes(self,
                       preprocessing=[],
@@ -85,6 +86,7 @@ class NIFTIDataset(WorkbenchDataset):
 
         # save preprocessing records in profile
         self.profile["preprocessing"].extend(preprocessing)
+        print("Preprocessing complete. You may need to call calculate_statistics() again for updated statistics.")
 
     def calculate_statistics(self,
                              foreground_threshold=0,
@@ -95,6 +97,8 @@ class NIFTIDataset(WorkbenchDataset):
         voxel_max, voxel_min = [], []
         voxel_ct = 0
         all_intensities = []
+
+        self.profile["statistics"]["image_statistics"] = []
 
         dataset = zip(self.profile["images"], self.profile["labels"])
         for item in dataset:
@@ -130,9 +134,9 @@ class NIFTIDataset(WorkbenchDataset):
             all_intensities.append(intensities)
 
             # percentiles
-            image_percentile_values = np.percentile(
+            image_percentile_values = list(np.percentile(
                 intensities, percentiles
-            )
+            ))
 
             # median
             image_median = np.median(intensities)
@@ -153,13 +157,14 @@ class NIFTIDataset(WorkbenchDataset):
         # Overall statistics
         self.profile["statistics"]["max"], self.profile["statistics"]["min"] = max(voxel_max), min(voxel_min)
         self.profile["statistics"]["mean"] = (voxel_sum / voxel_ct).item()
-        self.profile["statistics"]["std"] = (np.sqrt(voxel_square_sum / voxel_ct - self.data_mean ** 2)).item()
+        self.profile["statistics"]["std"] = (np.sqrt(voxel_square_sum / voxel_ct -
+                                                     self.profile["statistics"]["mean"] ** 2)).item()
 
         all_intensities = list(chain(*all_intensities))
         self.profile["statistics"]["percentile"] = percentiles
-        self.profile["statistics"]["percentile_values"] = np.percentile(
+        self.profile["statistics"]["percentile_values"] = list(np.percentile(
             all_intensities, percentiles
-        )
+        ))
         self.profile["statistics"]["median"] = np.median(all_intensities)
 
         # TODO: Image spacing, Number of classes, Number of pixels/voxels per class
@@ -169,10 +174,12 @@ class NIFTIDataset(WorkbenchDataset):
         label_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["labels"][index]))
         image = nib.load(img_path).get_fdata()
         label = nib.load(label_path).get_fdata()
+
+        # TODO: call transformations here (apply either train / inference transforms option)
         if self.profile["get_item_as_dict"]:
             # return as dictionary
-            item = {self.profile["get_item_keys"]["image"]: image,
-                    self.profile["get_item_keys"]["labels"]: label}
+            item = {self.profile["get_item_keys"]["image_key"]: image,
+                    self.profile["get_item_keys"]["label_key"]: label}
             return item
         return image, label
 

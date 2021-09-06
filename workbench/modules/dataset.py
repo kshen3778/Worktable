@@ -41,8 +41,10 @@ class WorkbenchDataset(Dataset):
             self.profile["labels"] = labels
 
         self.profile["get_item_as_dict"] = get_item_as_dict
-        self.profile["get_item_keys"]["image"] = image_key
-        self.profile["get_item_keys"]["labels"] = label_key
+        self.profile["get_item_keys"] = {
+            "image_key": image_key,
+            "label_key": label_key
+        }
 
         # If loaded via file or dataframe
         if file_path_or_dataframe is not None:
@@ -59,6 +61,10 @@ class WorkbenchDataset(Dataset):
             self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy().tolist()
             if labels is not None:
                 self.profile["labels"] = self.profile["dataframe"][self.profile["labels"]].to_numpy().tolist()
+
+            self.profile.pop("dataframe", None)  # delete dataframe to save space
+
+        self.profile["statistics"] = {}
 
         # Option to calculate statistics directly as init
         if calculate_statistics:
@@ -98,21 +104,19 @@ class WorkbenchDataset(Dataset):
         else:
             self.profile["transforms"]["inference"] = []
 
-    def save_profile(self, name, save_location=None, save_dataframe_as_file=False):
+    def save_profile(self, name, save_location=None):
         """
         Save a workbench profile file for this dataset
         """
 
+        if name is None:
+            # default name from timestamp
+            name = "version." + str(time.strftime("%Y%m%d-%H%M%S"))
         self.profile["name"] = name
 
         # Default save location if none
         if save_location is None:
             save_location = self.profile["base_dir"]
-
-        # Save dataframe as csv
-        if save_dataframe_as_file and ("dataframe" in self.profile):
-            csv_path = os.path.join(save_location, name + ".csv")
-            self.profile["dataframe"].to_csv(csv_path, index=False)
 
         # Save profile
         save_path = os.path.join(save_location, name + ".workbench.json")
@@ -149,9 +153,7 @@ class WorkbenchDataset(Dataset):
         Overall: min, max, std, percentiles, spacing, number of classes, number of pixels/voxels per class
         Individual: same as above but for each individual image
         """
-        if "statistics" in self.profile:
-            return self.profile["statistics"]
-        return None
+        return self.profile["statistics"]
 
     def apply_changes(self,
                       preprocessing=[],
