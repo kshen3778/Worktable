@@ -46,9 +46,24 @@ class CenterCrop3D:
     def __call__(self, img, mask=None):
         assert img.shape == mask.shape
         shape0, shape1, shape2 = img.shape
-        start0 = shape0 // 2 - (self.crop_0 // 2)
-        start1 = shape1 // 2 - (self.crop_1 // 2)
-        start2 = shape2 // 2 - (self.crop_2 // 2)
+
+        if self.crop_0 < shape0:
+            start0 = shape0 // 2 - (self.crop_0 // 2)
+        else:
+            start0 = 0
+            self.crop_0 = shape0
+
+        if self.crop_1 < shape1:
+            start1 = shape1 // 2 - (self.crop_1 // 2)
+        else:
+            start1 = 0
+            self.crop_1 = shape1
+
+        if self.crop_2 < shape2:
+            start2 = shape2 // 2 - (self.crop_2 // 2)
+        else:
+            start2 = 0
+            self.crop_2 = shape2
 
         cropped_img = img[start0:start0 + self.crop_0, start1:start1 + self.crop_1, start2:start2 + self.crop_2]
         if mask is not None:
@@ -57,11 +72,6 @@ class CenterCrop3D:
         else:
             return cropped_img
 
-def crop_center(img,cropx,cropy):
-    y,x = img.shape
-    startx = x//2-(cropx//2)
-    starty = y//2-(cropy//2)
-    return img[starty:starty+cropy,startx:startx+cropx]
 
 class RandomFlip3D:
 
