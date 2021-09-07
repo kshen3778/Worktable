@@ -1,3 +1,2 @@
-import workbench.models
+import workbench.modules
 import workbench.utils
-import workbench.data

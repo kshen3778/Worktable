@@ -72,6 +72,10 @@ class WorkbenchDataset(Dataset):
 
             self.profile.pop("dataframe", None)  # delete dataframe to save space
 
+        # Convert possible array type to list
+        self.profile["images"] = list(self.profile["images"])
+        self.profile["labels"] = list(self.profile["labels"])
+
         # Option to calculate statistics directly as init
         if calculate_statistics:
             self.calculate_statistics()
