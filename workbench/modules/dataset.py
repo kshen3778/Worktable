@@ -36,7 +36,7 @@ class WorkbenchDataset(Dataset):
         self.profile = {}
 
         if base_dir is not None:
-            self.profile["base_dir"] = os.path.abspath(base_dir)
+            self.profile["base_dir"] = base_dir
 
         if images is not None:
             self.profile["images"] = images
@@ -63,7 +63,8 @@ class WorkbenchDataset(Dataset):
                 # if is a csv file
                 self.profile["file_path"] = file_path_or_dataframe
                 # convert csv file to dataframe
-                self.profile["dataframe"] = pd.read_csv(os.path.join(self.profile["base_dir"], file_path_or_dataframe))
+                self.profile["dataframe"] = pd.read_csv(os.path.join(self.profile["base_dir"],
+                                                                     os.path.normpath(file_path_or_dataframe)))
 
             # extract paths
             self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy().tolist()
@@ -73,8 +74,13 @@ class WorkbenchDataset(Dataset):
             self.profile.pop("dataframe", None)  # delete dataframe to save space
 
         # Convert possible array type to list
-        self.profile["images"] = list(self.profile["images"])
-        self.profile["labels"] = list(self.profile["labels"])
+        if "images" in self.profile and "labels" in self.profile:
+            self.profile["images"] = list(self.profile["images"])
+            self.profile["labels"] = list(self.profile["labels"])
+
+        # Convert to abs path
+        if "base_dir" in self.profile and (not os.path.isabs(self.profile["base_dir"])):
+            self.profile["base_dir"] = os.path.abspath(base_dir)
 
         # Option to calculate statistics directly as init
         if calculate_statistics:
@@ -86,6 +92,7 @@ class WorkbenchDataset(Dataset):
         train=True : training transformations
         train=False: inference/validation transformations
         """
+        self.profile["transforms"] = {"train": [], "inference": []}
         if train:
             self.profile["transforms"]["train"] = transforms
         else:
@@ -95,6 +102,9 @@ class WorkbenchDataset(Dataset):
         """
         Return transformations as list of a Compose
         """
+        if "transforms" not in self.profile:
+            return None
+
         transform_list = []
         if train:
             transform_list = self.profile["transforms"]["train"]
@@ -114,10 +124,12 @@ class WorkbenchDataset(Dataset):
         else:
             self.profile["transforms"]["inference"] = []
 
-    def save_profile(self, name, save_location=None):
+    def save_profile(self, name=None, save_location=None):
         """
         Save a workbench profile file for this dataset
         """
+
+        # TODO: Save transformations + preprocessing as pth, import when loaded
 
         if name is None:
             # default name from timestamp
@@ -139,6 +151,9 @@ class WorkbenchDataset(Dataset):
         """
         Load a dataset profile from a workbench file
         """
+
+        # TODO: Retrieve transformations from .pth file
+
         with open(path) as json_file:
             self.profile = json.load(json_file)
 

@@ -30,7 +30,7 @@ def test_nifti_dataset():
     dataset2 = NIFTIDataset(base_dir="./data/Lung_GTV_small",
                             images=images,
                             labels=labels)
-    dataset2.get_profile()
+    dataset2.save_profile(name="dataset2")
     # Check if dataset2 profile matches
     assert 1 == 1
 

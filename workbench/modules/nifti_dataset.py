@@ -85,7 +85,6 @@ class NIFTIDataset(WorkbenchDataset):
                     img_data = func(img.get_fdata())
 
             # Resave image/labels to NIFTI: https://bic-berkeley.github.io/psych-214-fall-2016/saving_images.html
-            # TODO: Fix error: file not being saved properly (too small)
             preprocessed_img = nib.Nifti1Image(img_data, img.affine, img.header)
             nib.save(preprocessed_img, os.path.join(self.profile["base_dir"], os.path.normpath(item[0])))
             if preprocess_labels:
