@@ -1,5 +1,4 @@
 from distutils.dir_util import copy_tree
-import shutil
 import os
 import json
 import pathlib
@@ -251,7 +250,7 @@ class WorkbenchDataset(Dataset):
         """
         Create a new dataset version on disk (that can be loaded through WorkbenchDataset)
 
-        Save the profile as a workbench file (in the new base dir)
+        Save the profile as a workbench (in the new base dir)
         """
 
         # Create new base dir if it doesn't already exist
@@ -260,9 +259,13 @@ class WorkbenchDataset(Dataset):
         # Copy contents
         copy_tree(self.profile["base_dir"], new_base_dir)
 
-        # Remove existing .workbench if copied over from original dataset
-        if os.path.isdir(os.path.join(new_base_dir, ".workbench")):
-            shutil.rmtree(os.path.join(new_base_dir, ".workbench"))
+        # Remove existing .workbench.json if copied over from original dataset
+        workbench_dir = os.path.join(new_base_dir, ".workbench")
+        if os.path.isdir(workbench_dir):
+            all_files = os.listdir(workbench_dir)
+            for file in all_files:
+                if file.endswith(".workbench.json"):
+                    os.remove(os.path.join(workbench_dir, file))
 
         # Save profile
         if save_profile:
@@ -273,10 +276,12 @@ class WorkbenchDataset(Dataset):
             self.save(name, new_base_dir)
 
             # Edit in new base dir path
-            with open(os.path.join(os.path.abspath(new_base_dir), name + ".workbench.json")) as json_file:
+            with open(os.path.join(os.path.abspath(new_base_dir), ".workbench/" + name + ".workbench.json")) \
+                    as json_file:
                 profile = json.load(json_file)
                 profile["base_dir"] = os.path.abspath(new_base_dir)
-                with open(os.path.join(os.path.abspath(new_base_dir), name + ".workbench.json"), 'w') as fp:
+                with open(os.path.join(os.path.abspath(new_base_dir), ".workbench/" + name + ".workbench.json"), 'w') \
+                        as fp:
                     json.dump(profile, fp, indent=4)
 
         print("New dataset version has been created at: ", new_base_dir)

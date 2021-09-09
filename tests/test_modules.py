@@ -20,9 +20,9 @@ def test_nifti_dataset():
 
     # Version 1: Via CSV file
     dataset1 = NIFTIDataset(base_dir="./data/Lung_GTV_small",
-                           images="images",
-                           labels="labels",
-                           file_path_or_dataframe="./data/Lung_GTV_small/data.csv")
+                            images="images",
+                            labels="labels",
+                            file_path_or_dataframe="./data/Lung_GTV_small/data.csv")
 
     # Version 2: Via list of paths
     images = np.load('./data/Lung_GTV_small/imgs.npy')
@@ -30,7 +30,7 @@ def test_nifti_dataset():
     dataset2 = NIFTIDataset(base_dir="./data/Lung_GTV_small",
                             images=images,
                             labels=labels)
-    dataset2.save_profile(name="dataset2")
+    dataset2.save(name="dataset2")
     # Check if dataset2 profile matches
     assert 1 == 1
 
@@ -42,20 +42,19 @@ def test_nifti_dataset():
 
     dataset1.calculate_statistics(percentiles=[10, 50, 90])
 
-    dataset1.save_profile(name="dataset1", save_location="./data/Lung_GTV_small")
+    dataset1.save(name="dataset1")
 
     dataset1.create_new_version(new_base_dir="./data/Lung_GTV_small_2", name="dataset1_new")
 
     dataset1_new = NIFTIDataset()
-    dataset1_new.load_from_profile("./data/Lung_GTV_small_2/dataset1_new.workbench.json")
+    dataset1_new.load("./data/Lung_GTV_small_2")
 
-    preprocessing = [HistogramClipping(percent=True), CenterCrop3D(10, 10, 10)]
+    preprocessing = [HistogramClipping(percent=True), CenterCrop3D(512, 512, 10)]
     dataset1_new.apply_changes(preprocessing=preprocessing)
-    dataset1_new.save_profile(name="dataset1_new")
+    dataset1_new.save(name="dataset1_new")
 
     # Assert created profiles with test profiles
     assert 1 == 1
-
     # Test dataloading functionality
 
 
