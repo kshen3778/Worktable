@@ -174,8 +174,8 @@ class NIFTIDataset(WorkbenchDataset):
             indiv_stats = {
                 "image": item[0],
                 "label": item[1],
-                "image_shape": image.shape,
-                "label_shape": label.shape,
+                "image_shape": list(image.shape),
+                "label_shape": list(label.shape),
                 "max": image_max,
                 "min": image_min,
                 "mean": image_mean,

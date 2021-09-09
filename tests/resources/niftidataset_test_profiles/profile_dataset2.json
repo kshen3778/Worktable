@@ -1,0 +1,19 @@
+{
+    "base_dir": "placeholder",
+    "images": [
+        "./1/data.nii.gz",
+        "./2/data.nii.gz",
+        "./3/data.nii.gz"
+    ],
+    "labels": [
+        "./1/label.nii.gz",
+        "./2/label.nii.gz",
+        "./3/label.nii.gz"
+    ],
+    "get_item_as_dict": false,
+    "get_item_keys": {
+        "image_key": null,
+        "label_key": null
+    },
+    "name": "dataset2"
+}
