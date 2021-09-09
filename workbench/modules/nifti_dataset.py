@@ -140,6 +140,7 @@ class NIFTIDataset(WorkbenchDataset):
             image_foreground = image[np.where(label > foreground_threshold)]
             image_voxel_ct = len(image_foreground)
             if image_voxel_ct == 0:
+                self.profile["statistics"] = {}
                 raise ValueError("No foreground pixels/voxels found! Cannot calculate statistics. "
                               "This can be because any positive labels have been cropped out "
                               "or the mask does not have any labels. "
