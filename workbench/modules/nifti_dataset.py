@@ -85,7 +85,6 @@ class NIFTIDataset(WorkbenchDataset):
                     img_data = func(img.get_fdata())
 
             # Resave image/labels to NIFTI: https://bic-berkeley.github.io/psych-214-fall-2016/saving_images.html
-            # TODO: Fix error: file not being saved properly (too small)
             preprocessed_img = nib.Nifti1Image(img_data, img.affine, img.header)
             nib.save(preprocessed_img, os.path.join(self.profile["base_dir"], os.path.normpath(item[0])))
             if preprocess_labels:
@@ -141,10 +140,12 @@ class NIFTIDataset(WorkbenchDataset):
             image_foreground = image[np.where(label > foreground_threshold)]
             image_voxel_ct = len(image_foreground)
             if image_voxel_ct == 0:
-                raise ValueError("No foreground pixels/voxels found! Cannot calculate statistics. "
-                              "This can be because any positive labels have been cropped out "
-                              "or the mask does not have any labels. "
-                              "Please try setting foreground_threshold = -1")
+                self.profile["statistics"] = {}
+                raise ValueError("No foreground pixels/voxels found for sample: " + label_path +
+                                  " Cannot calculate statistics. "
+                                  "This can be because all positive labels for this sample have been cropped out "
+                                  "or the mask does not have any labels. "
+                                  "Please try setting foreground_threshold = -1")
             voxel_ct += image_voxel_ct
 
             image_voxel_sum = image_foreground.sum()
@@ -173,8 +174,8 @@ class NIFTIDataset(WorkbenchDataset):
             indiv_stats = {
                 "image": item[0],
                 "label": item[1],
-                "image_shape": image.shape,
-                "label_shape": label.shape,
+                "image_shape": list(image.shape),
+                "label_shape": list(label.shape),
                 "max": image_max,
                 "min": image_min,
                 "mean": image_mean,

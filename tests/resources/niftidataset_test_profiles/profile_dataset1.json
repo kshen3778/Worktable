@@ -1,0 +1,128 @@
+{
+    "base_dir": "placeholder",
+    "images": [
+        "./1/data.nii.gz",
+        "./2/data.nii.gz",
+        "./3/data.nii.gz"
+    ],
+    "labels": [
+        "./1/label.nii.gz",
+        "./2/label.nii.gz",
+        "./3/label.nii.gz"
+    ],
+    "get_item_as_dict": false,
+    "get_item_keys": {
+        "image_key": null,
+        "label_key": null
+    },
+    "file_path": "data.csv",
+    "statistics": {
+        "foreground_threshold": 0,
+        "sampling_interval": 1,
+        "image_statistics": [
+            {
+                "image": "./1/data.nii.gz",
+                "label": "./1/label.nii.gz",
+                "image_shape": [
+                    512,
+                    512,
+                    96
+                ],
+                "label_shape": [
+                    512,
+                    512,
+                    96
+                ],
+                "max": 3071.0,
+                "min": -1024.0,
+                "mean": -247.43211920529802,
+                "std": 222.7260820915533,
+                "percentile": [
+                    10,
+                    50,
+                    90
+                ],
+                "percentile_values": [
+                    -567.1,
+                    -230.0,
+                    14.0
+                ],
+                "median": -230.0
+            },
+            {
+                "image": "./2/data.nii.gz",
+                "label": "./2/label.nii.gz",
+                "image_shape": [
+                    512,
+                    512,
+                    80
+                ],
+                "label_shape": [
+                    512,
+                    512,
+                    80
+                ],
+                "max": 1453.0,
+                "min": -1024.0,
+                "mean": -68.48429188829788,
+                "std": 173.99407963090667,
+                "percentile": [
+                    10,
+                    50,
+                    90
+                ],
+                "percentile_values": [
+                    -333.89999999999986,
+                    19.0,
+                    44.0
+                ],
+                "median": 19.0
+            },
+            {
+                "image": "./3/data.nii.gz",
+                "label": "./3/label.nii.gz",
+                "image_shape": [
+                    512,
+                    512,
+                    87
+                ],
+                "label_shape": [
+                    512,
+                    512,
+                    87
+                ],
+                "max": 3071.0,
+                "min": -1024.0,
+                "mean": -241.87100737100738,
+                "std": 186.21833192434477,
+                "percentile": [
+                    10,
+                    50,
+                    90
+                ],
+                "percentile_values": [
+                    -512.8,
+                    -220.0,
+                    -2.2999999999999545
+                ],
+                "median": -220.0
+            }
+        ],
+        "max": 3071.0,
+        "min": -1024.0,
+        "mean": -87.01375464684016,
+        "std": 185.26394362393407,
+        "percentile": [
+            10,
+            50,
+            90
+        ],
+        "percentile_values": [
+            -383.0,
+            10.0,
+            43.0
+        ],
+        "median": 10.0
+    },
+    "name": "dataset1"
+}
