@@ -10,7 +10,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 
 nifti_dataset_url = "https://raw.githubusercontent.com/kshen3778/Workbench-testing/main/data/Lung_GTV_small.zip"
-nifti_dataset_test_profiles = "resources/niftidataset_test_profiles/"
+nifti_dataset_test_profiles = "./resources/niftidataset_test_profiles/"
 
 def test_nifti_dataset():
     # Create data directory if does not exist
