@@ -69,7 +69,7 @@ class WorkbenchDataset(Dataset):
                     # if is a csv file
                     self.profile["file_path"] = file_name_or_dataframe
                     # convert csv file to dataframe
-                    self.profile["dataframe"] = pd.read_csv(os.path.join(self.profile["base_dir"],
+                    self.profile["dataframe"] = pd.read_csv(os.path.join(os.path.normpath(self.profile["base_dir"]),
                                                                          os.path.normpath(file_name_or_dataframe)))
 
                 # extract paths
