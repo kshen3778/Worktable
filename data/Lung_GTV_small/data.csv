@@ -1,0 +1,4 @@
+,images,labels
+0,./1/data.nii.gz,./1/label.nii.gz
+1,./2/data.nii.gz,./2/label.nii.gz
+2,./3/data.nii.gz,./3/label.nii.gz
