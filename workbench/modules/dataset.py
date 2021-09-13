@@ -42,7 +42,7 @@ class WorkbenchDataset(Dataset):
             self.load(load_from_path)
         else:
             if base_dir is not None:
-                self.profile["base_dir"] = base_dir
+                self.profile["base_dir"] = os.path.normpath(base_dir)  # normalize path for Windows
 
             if images is not None:
                 self.profile["images"] = images
@@ -58,6 +58,7 @@ class WorkbenchDataset(Dataset):
 
             # If loaded via file or dataframe
             if file_name_or_dataframe is not None:
+                file_name_or_dataframe = os.path.normpath(file_name_or_dataframe)
                 if isinstance(file_name_or_dataframe, pd.DataFrame):
                     # is a dataframe
                     self.profile["dataframe"] = file_name_or_dataframe
@@ -69,8 +70,8 @@ class WorkbenchDataset(Dataset):
                     # if is a csv file
                     self.profile["file_path"] = file_name_or_dataframe
                     # convert csv file to dataframe
-                    self.profile["dataframe"] = pd.read_csv(os.path.join(os.path.normpath(self.profile["base_dir"]),
-                                                                         os.path.normpath(file_name_or_dataframe)))
+                    self.profile["dataframe"] = pd.read_csv(os.path.join(self.profile["base_dir"],
+                                                                         file_name_or_dataframe))
 
                 # extract paths
                 self.profile["images"] = self.profile["dataframe"][self.profile["images"]].to_numpy().tolist()
@@ -179,9 +180,10 @@ class WorkbenchDataset(Dataset):
         """
         Load a dataset profile from a workbench folder, or path that contains workbench folder
         """
+        path = os.path.normpath(path)
 
         # Check if path is .workbench or to a base dir
-        last_dir = os.path.basename(os.path.normpath(path))
+        last_dir = os.path.basename(path)
         if last_dir != ".workbench":
             path = os.path.join(path, ".workbench")
 
@@ -252,6 +254,8 @@ class WorkbenchDataset(Dataset):
 
         Save the profile as a workbench (in the new base dir)
         """
+
+        new_base_dir = os.path.normpath(new_base_dir)
 
         # Create new base dir if it doesn't already exist
         pathlib.Path(new_base_dir).mkdir(parents=True, exist_ok=True)

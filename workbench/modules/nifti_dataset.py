@@ -71,7 +71,8 @@ class NIFTIDataset(WorkbenchDataset):
                 img = nib.load(img_path)
                 label = nib.load(label_path)
             else:
-                img = nib.load(item)
+                img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item))
+                img = nib.load(img_path)
 
             for func in preprocessing:
                 if preprocess_labels:
