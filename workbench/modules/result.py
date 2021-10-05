@@ -2,6 +2,7 @@ import os
 import pathlib
 import torch
 import json
+import shutil
 
 import numpy as np
 import SimpleITK as sitk
@@ -76,7 +77,7 @@ class Result:
 
         # Save original input
         if input is not None:
-            name = id + ".input.npy" # save as same name as output
+            name = id + ".input.npy"  # save as same name as output
             np.save(os.path.join(self.base_dir, name), input)
 
 
@@ -97,5 +98,21 @@ class Result:
         """
         pass
 
-    def clear_dir(self):
-        pass
+    def clear(self):
+        """
+        Clear all contents stored in this Result object as well as files in the directory
+        """
+        # Reset fields
+        self.id_counter = 1
+
+        # Delete all files
+        folder = self.base_dir
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
