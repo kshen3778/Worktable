@@ -4,7 +4,8 @@ with open("README.md", "r") as rm:
     long_description = rm.read()
 
 setuptools.setup(
-    name="Workbench",
+    name="Sandbox",
+    packages = ['Sandbox'],
     version="0.0.1",
     author="Kevin Shen, Joseph Marsilla",
     author_email="kshen3778@gmail.com",
