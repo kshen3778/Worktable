@@ -35,21 +35,6 @@ class NIFTIDataset(WorkbenchDataset):
                       input_format="param",
                       image_key=None,
                       label_key=None):
-        """
-
-        Args:
-            preprocessing: list of preprocessing classes
-            preprocess_labels: whether labels will be preprocessed too
-            recalculate_statistics: whether to re-run calculate_statistics again at the end
-            input_format: input format to feed to preprocess function if labels exist:
-                "param" is func(x, y), "tuple" is func((x, y)), "dict" is func({"image":x, "label":y})
-            image_key: if input_format is "dict" this is the name of the image key
-            label_key: if input_format is "dict" this is the name of the label key
-
-        Returns:
-            Nothing
-
-        """
 
         # If labels don't exist
         if "labels" not in self.profile:
