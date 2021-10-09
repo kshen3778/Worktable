@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Any
 
 
 class WorkbenchDataset(Dataset):
@@ -100,22 +100,40 @@ class WorkbenchDataset(Dataset):
             if calculate_statistics:
                 self.calculate_statistics()
 
-    def attach_transformations(self, transforms, train=True):
+    def attach_transformations(self,
+                               transforms: List,
+                               train: bool = True):
+        """Attach a list of transformations to a split of the data.
+        The data split can be either train or inference.
+
+        Args:
+            transforms: the list of Pytorch transformations
+            train: Whether these transformations are for train or inference.
+                train=True : training transformations
+                train=False: inference/validation transformations
+
         """
-        Transformations applied during training/inference
-        train=True : training transformations
-        train=False: inference/validation transformations
-        """
+
         self.profile["transforms"] = {"train": [], "inference": []}
         if train:
             self.profile["transforms"]["train"] = transforms
         else:
             self.profile["transforms"]["inference"] = transforms
 
-    def get_transformations(self, compose=False, train=True):
+    def get_transformations(self,
+                            compose: bool = False,
+                            train: bool = True):
+        """Return the list of attached transformations.
+
+        Args:
+            compose: Whether to wrap the transforms in a torchvision.transforms.Compose
+            train: Whether to get the training or inference transformations.
+
+        Returns:
+            A list of transforms or a torchvision.transforms.Compose object.
+
         """
-        Return transformations as list of a Compose
-        """
+
         if "transforms" not in self.profile:
             return None
 
@@ -129,18 +147,33 @@ class WorkbenchDataset(Dataset):
             return Compose(transform_list)
         return transform_list
 
-    def remove_transformations(self, train=True):
+    def remove_transformations(self,
+                               train: bool = True):
+        """Remove all transformations for a data split
+
+        Args:
+            train: Remove training transforms (=True) or inference transforms (=False)
+
         """
-        Remove all transformations
-        """
+
         if train:
             self.profile["transforms"]["train"] = []
         else:
             self.profile["transforms"]["inference"] = []
 
-    def save(self, name=None, new_save_location=None):
-        """
-        Save a workbench profile file for this dataset
+    def save(self,
+             name: Optional[str] = None,
+             new_save_location: Optional[str] = None):
+        """Saves a profile for this dataset.
+        The profile is a .workbench directory that contains all file paths, configurations, transformations,
+        metadata, and statistics. Because it contains all the information, it acts as
+        a unique identifier for a dataset and when a dataset is loaded, it's profile is read.
+        If name is none, a default name from the current timestamp is assigned.
+
+        Args:
+            name: Profile file name
+            new_save_location: Specify a new location to save the profile file that's not the current base directory.
+
         """
 
         base_dir = self.profile["base_dir"]
@@ -183,10 +216,15 @@ class WorkbenchDataset(Dataset):
 
         print("Profile saved at: ", save_location)
 
-    def load(self, path):
+    def load(self,
+             path: str):
+        """Load a dataset's profile from a .workbench directory or a path that contains a .workbench directory.
+
+        Args:
+            path: Path to a .workbench directory or path to a directory that contains a .workbench directory.
+
         """
-        Load a dataset profile from a workbench folder, or path that contains workbench folder
-        """
+
         path = os.path.normpath(path)
 
         # Check if path is .workbench or to a base dir
@@ -218,38 +256,66 @@ class WorkbenchDataset(Dataset):
             self.profile["preprocessing"] = torch.load(os.path.join(path, "preprocessing.pt"))
 
     def get_profile(self):
+        """Get the profile of a dataset and return it as a dictionary
+
+        Returns:
+            A dict containing the profile information of a dataset.
+
         """
-        Get dataset settings such as name, preprocessing applied, transformations, filepaths
-        Also gets statistics of dataset (calls get_statistics).
-        """
+
         return self.profile
 
-    def calculate_statistics(self, foreground_threshold=0, percentiles=[], sampling_interval=1):
-        """
-        Min, max, mean, std, percentiles, spacing, number of classes, number of pixels/voxels per class
-        Calculate first 6 for individual images as well
+    def calculate_statistics(self,
+                             foreground_threshold: int = 0,
+                             percentiles: List[Union[int, float]] = [],
+                             sampling_interval: int = 1):
+        """Calculate statistics for the whole dataset as well as individual samples.
+        Min, max, mean, std, percentiles, spacing, number of classes, number of pixels/voxels per class are calculated
+        for the entire dataset.
+        Min, max, mean, std, percentiles, spacing are calculated for each individual sample too.
         percentiles will specify the xth percentile when calculating percentiles
+
+        Args:
+            foreground_threshold: The threshold for determining foreground vs background in an image sample. All values
+                in labels greater than foreground_threshold is considered foreground during statistics calculations.
+            percentiles: the xth percentile when calculating percentiles for pixel/voxel values
+            sampling_interval: the interval at which samples are used to calculate intensities
+                for percentile calculations.
+
         """
+
         return NotImplementedError
 
     def get_statistics(self):
+        """Return the statistics of the dataset previously calculated with calculate_statistics.
+
+        Returns:
+            A dictionary with the dataset statistics information.
+
         """
-        Get the statistics of dataset
-        Overall: min, max, std, percentiles, spacing, number of classes, number of pixels/voxels per class
-        Individual: same as above but for each individual image
-        """
+
         return self.profile["statistics"]
 
     def apply_changes(self,
-                      preprocessing=[],
-                      preprocess_labels=True,
-                      recalculate_statistics=True,
-                      input_format="param",
-                      image_key=None,
-                      label_key=None):
+                      preprocessing: List = [],
+                      preprocess_labels: bool = True,
+                      recalculate_statistics: bool = True,
+                      input_format: str = "param",
+                      image_key: Optional[str] = None,
+                      label_key: Optional[str] = None):
+        """Apply preprocessing and directly modify the current dataset.
+
+        Args:
+            preprocessing: List of preprocessing classes/functions to be applied.
+            preprocess_labels: Whether to preprocess labels too, or just images.
+            recalculate_statistics: whether to re-run calculate_statistics again at the end
+            input_format: input format to feed to preprocess function if labels exist:
+                "param" is func(x, y), "tuple" is func((x, y)), "dict" is func({image_key:x, label_key:y})
+            image_key: if input_format is "dict" this is the name of the image key
+            label_key: if input_format is "dict" this is the name of the label key
+
         """
-        Apply preprocessing and modify this current copy
-        """
+
         return NotImplementedError
 
     def create_new_version(self,
@@ -296,7 +362,6 @@ class WorkbenchDataset(Dataset):
                     json.dump(profile, fp, indent=4)
 
         print("New dataset version has been created at: ", new_base_dir)
-
 
     def get_subset(self, items):
         """
