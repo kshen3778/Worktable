@@ -5,14 +5,14 @@ from zipfile import ZipFile
 import numpy as np
 import os
 
-from workbench.modules import *
-from workbench.utils.preprocessing import *
+from worktable.modules import *
+from worktable.utils.preprocessing import *
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
 def test_nifti_dataset():
     parent = pathlib.Path(__file__).parent
-    nifti_dataset_url = "https://raw.githubusercontent.com/kshen3778/Workbench-testing/main/data/Lung_GTV_small.zip"
+    nifti_dataset_url = "https://raw.githubusercontent.com/kshen3778/Worktable-testing/main/data/Lung_GTV_small.zip"
     nifti_dataset_test_profiles = os.path.join(parent, "resources", "niftidataset_test_profiles")
 
 

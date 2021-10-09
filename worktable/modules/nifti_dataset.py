@@ -3,7 +3,7 @@ import os
 
 import nibabel as nib
 import numpy as np
-from workbench.modules.dataset import WorkbenchDataset
+from worktable.modules.dataset import WorktableDataset
 
 """
 TODO:
@@ -11,7 +11,7 @@ TODO:
 - Image spacing, Number of classes, Number of pixels/voxels per class
 """
 
-class NIFTIDataset(WorkbenchDataset):
+class NIFTIDataset(WorktableDataset):
 
     def __init__(self,
                  base_dir=None,

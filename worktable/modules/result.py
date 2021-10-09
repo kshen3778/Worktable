@@ -6,7 +6,7 @@ import shutil
 
 import numpy as np
 import SimpleITK as sitk
-from workbench.utils import mask_to_contour_set
+from worktable.utils import mask_to_contour_set
 
 class Result:
 
