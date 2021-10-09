@@ -11,7 +11,7 @@ from torchvision.transforms import Compose
 from typing import Union, List, Optional, Any
 
 
-class WorkbenchDataset(Dataset):
+class WorktableDataset(Dataset):
 
     def __init__(self,
                  base_dir: Optional[str] = None,
@@ -40,11 +40,12 @@ class WorkbenchDataset(Dataset):
             image_key: The name of the image dict key if get_item_as_dict is True.
             label_key: The name of the label dict key if get_item_as_dict is True.
             load_from_path: Path to a pre-existing Workbench dataset base directory.
+
         """
 
         self.profile = {}
 
-        # load a pre-existing workbench dataset
+        # load a pre-existing worktable dataset
         if load_from_path is not None:
             self.load(load_from_path)
         else:
@@ -180,8 +181,8 @@ class WorkbenchDataset(Dataset):
         if new_save_location is not None:
             base_dir = new_save_location
 
-        # Create .workbench folder
-        pathlib.Path(os.path.join(base_dir, ".workbench")).mkdir(parents=True, exist_ok=True)
+        # Create .worktable folder
+        pathlib.Path(os.path.join(base_dir, ".worktable")).mkdir(parents=True, exist_ok=True)
 
         if name is None:
             # default name from timestamp
@@ -192,25 +193,25 @@ class WorkbenchDataset(Dataset):
         # Save transformations and preprocessing into .pt files since they can't be serialized into JSON
         if "transforms" in self.profile:
             torch.save(self.profile["transforms"], os.path.join(base_dir,
-                                                                ".workbench/transforms.pt"))
+                                                                ".worktable/transforms.pt"))
             del self.profile["transforms"]
 
         if "preprocessing" in self.profile:
             torch.save(self.profile["preprocessing"], os.path.join(base_dir,
-                                                                ".workbench/preprocessing.pt"))
+                                                                ".worktable/preprocessing.pt"))
             del self.profile["preprocessing"]
 
-        save_location = os.path.join(base_dir, ".workbench")
+        save_location = os.path.join(base_dir, ".worktable")
 
-        # Clear all old .workbench.json files from .workbench
+        # Clear all old .worktable.json files from .worktable
         files_in_directory = os.listdir(save_location)
-        filtered_files = [file for file in files_in_directory if file.endswith(".workbench.json")]
+        filtered_files = [file for file in files_in_directory if file.endswith(".worktable.json")]
         for file in filtered_files:
             path_to_file = os.path.join(save_location, file)
             os.remove(path_to_file)
 
         # Save profile
-        save_path = os.path.join(save_location, name + ".workbench.json")
+        save_path = os.path.join(save_location, name + ".worktable.json")
         with open(save_path, 'w') as fp:
             json.dump(self.profile, fp, indent=4)
 
@@ -227,23 +228,23 @@ class WorkbenchDataset(Dataset):
 
         path = os.path.normpath(path)
 
-        # Check if path is .workbench or to a base dir
+        # Check if path is .worktable or to a base dir
         last_dir = os.path.basename(path)
-        if last_dir != ".workbench":
-            path = os.path.join(path, ".workbench")
+        if last_dir != ".worktable":
+            path = os.path.join(path, ".worktable")
 
-        # Find .workbench.json and load
+        # Find .worktable.json and load
         json_profile = None
         if os.path.isdir(path):
             for file in os.listdir(path):
-                if file.endswith(".workbench.json"):
+                if file.endswith(".worktable.json"):
                     json_profile = os.path.join(path, file)
         else:
-            # If the .workbench directory does not exist
-            raise ValueError(".workbench directory does not exist. Not a valid Workbench Dataset.")
+            # If the .worktable directory does not exist
+            raise ValueError(".worktable directory does not exist. Not a valid Worktable Dataset.")
 
         if json_profile is None:
-            raise ValueError("No .workbench.json profile file found in .workbench directory.")
+            raise ValueError("No .worktable.json profile file found in .worktable directory.")
 
         # Open json profile file
         with open(json_profile) as json_file:
@@ -323,9 +324,9 @@ class WorkbenchDataset(Dataset):
                            name=None,
                            save_profile=True):
         """
-        Create a new dataset version on disk (that can be loaded through WorkbenchDataset)
+        Create a new dataset version on disk (that can be loaded through WorktableDataset)
 
-        Save the profile as a workbench (in the new base dir)
+        Save the profile as a worktable (in the new base dir)
         """
 
         new_base_dir = os.path.normpath(new_base_dir)
@@ -336,13 +337,13 @@ class WorkbenchDataset(Dataset):
         # Copy contents
         copy_tree(self.profile["base_dir"], new_base_dir)
 
-        # Remove existing .workbench.json if copied over from original dataset
-        workbench_dir = os.path.join(new_base_dir, ".workbench")
-        if os.path.isdir(workbench_dir):
-            all_files = os.listdir(workbench_dir)
+        # Remove existing .worktable.json if copied over from original dataset
+        worktable_dir = os.path.join(new_base_dir, ".worktable")
+        if os.path.isdir(worktable_dir):
+            all_files = os.listdir(worktable_dir)
             for file in all_files:
-                if file.endswith(".workbench.json"):
-                    os.remove(os.path.join(workbench_dir, file))
+                if file.endswith(".worktable.json"):
+                    os.remove(os.path.join(worktable_dir, file))
 
         # Save profile
         if save_profile:
@@ -353,11 +354,11 @@ class WorkbenchDataset(Dataset):
             self.save(name, new_base_dir)
 
             # Edit in new base dir path
-            with open(os.path.join(os.path.abspath(new_base_dir), ".workbench/" + name + ".workbench.json")) \
+            with open(os.path.join(os.path.abspath(new_base_dir), ".worktable/" + name + ".worktable.json")) \
                     as json_file:
                 profile = json.load(json_file)
                 profile["base_dir"] = os.path.abspath(new_base_dir)
-                with open(os.path.join(os.path.abspath(new_base_dir), ".workbench/" + name + ".workbench.json"), 'w') \
+                with open(os.path.join(os.path.abspath(new_base_dir), ".worktable/" + name + ".worktable.json"), 'w') \
                         as fp:
                     json.dump(profile, fp, indent=4)
 
@@ -365,7 +366,7 @@ class WorkbenchDataset(Dataset):
 
     def get_subset(self, items):
         """
-        Get a subset of the data and return a WorkbenchDataset
+        Get a subset of the data and return a WorktableDataset
 
         Items is a list of indices or list of file paths
         """
