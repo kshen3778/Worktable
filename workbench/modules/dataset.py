@@ -8,31 +8,38 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose
+from typing import Union, List, Optional
 
 
 class WorkbenchDataset(Dataset):
 
     def __init__(self,
-                 base_dir=None,
-                 images=None,
-                 labels=None,
-                 file_name_or_dataframe=None,
-                 calculate_statistics=False,
-                 get_item_as_dict=False,
-                 image_key=None,
-                 label_key=None,
-                 load_from_path=None):
-        """
-        base_dir needs to be passed no matter what (all files underneath base_dir will be tracked for create_version)
-        base_dir is also needed to store the .workbench file
-        labels is optional if goal is inference
-        Option 1: images, labels are list of relative file paths from the base_dir
-        Option 2: images, labels are column name of the dataframe/CSV specified by file_name_or_dataframe
-        (csv contain rel paths to base dir)
-        If dataframe, then convert to csv when saving
+                 base_dir: Optional[str] = None,
+                 images: Optional[Union[str, List[str]]] = None,
+                 labels: Optional[Union[str, List[str]]] = None,
+                 file_name_or_dataframe: Union[Optional[str], pd.DataFrame] = None,
+                 calculate_statistics: bool = False,
+                 get_item_as_dict: bool = False,
+                 image_key: Optional[str] = None,
+                 label_key: Optional[str] = None,
+                 load_from_path: Optional[str] = None):
+        """Initializes and creates a Workbench Dataset module that operates on data
+        in a specific directory specified base_dir.
+        Alternatively, you can load a pre-existing Workbench dataset by
+        setting load_from_path to its base directory.
 
-        get_item_as_dict specifies whether __getitem__ will return (image, label) or {"image": x, "label": y}
-        calculate_statistics decides whether to run calculate_statistics() on init
+        Args:
+            base_dir: The top most base directory that holds all files to be managed/versioned.
+            images: A list of relatives file paths to the images, or a
+                  file path column name for a dataframe/CSV
+            labels: A list of relatives file paths to the image labels/masks, or a
+                  file path column name for a dataframe/CSV
+            file_name_or_dataframe: File path to a CSV (relative to base_dir), or a pandas dataframe
+            calculate_statistics: Whether to calculate dataset statistics on initialization.
+            get_item_as_dict: specifies whether __getitem__ will return (image, label) or {"image": x, "label": y}
+            image_key: The name of the image dict key if get_item_as_dict is True.
+            label_key: The name of the label dict key if get_item_as_dict is True.
+            load_from_path: Path to a pre-existing Workbench dataset base directory.
         """
 
         self.profile = {}
