@@ -14,17 +14,17 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
-import workbench
+import worktable
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Workbench'
+project = 'Worktable'
 copyright = '2021, Kevin Shen'
 author = 'Kevin Shen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
