@@ -206,20 +206,6 @@ class NIFTIDataset(WorktableDataset):
 
     def __getitem__(self,
                     index: int):
-        """Returns an item at a specific index.
-
-        Args:
-            index: item index
-
-        Returns:
-            If get_item_as_dict is set to True, return a dictionary in the form:
-            {image_key: image, label_key: label} for the image,label pair at index.
-            Otherwise, return:
-            image - the image at the index
-            label - the corresponding label at the index
-
-        """
-
         img_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["images"][index]))
         label_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["labels"][index]))
         image = nib.load(img_path).get_fdata()
@@ -234,11 +220,4 @@ class NIFTIDataset(WorktableDataset):
         return image, label
 
     def __len__(self):
-        """Returns the size of the dataset (number of items).
-
-        Returns:
-            The dataset length/size.
-
-        """
-
         return len(self.profile["images"])
