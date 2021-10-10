@@ -36,7 +36,7 @@ def test_nifti_dataset():
     dataset1 = NIFTIDataset(base_dir=os.path.join(parent, "data", "Lung_GTV_small"),
                             images="images",
                             labels="labels",
-                            file_path_or_dataframe=os.path.join(parent, "data", "Lung_GTV_small", "data.csv"))
+                            file_name_or_dataframe=os.path.join(parent, "data", "Lung_GTV_small", "data.csv"))
 
     # Version 2: Via list of paths
     images = np.load(os.path.join(parent, "data", "Lung_GTV_small", "imgs.npy"))
