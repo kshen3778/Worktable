@@ -3,7 +3,9 @@ import os
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 from worktable.modules.dataset import WorktableDataset
+from typing import Union, List, Optional
 
 """
 TODO:
@@ -11,30 +13,44 @@ TODO:
 - Image spacing, Number of classes, Number of pixels/voxels per class
 """
 
+
 class NIFTIDataset(WorktableDataset):
 
     def __init__(self,
-                 base_dir=None,
-                 images=None,
-                 labels=None,
-                 file_path_or_dataframe=None,
-                 calculate_statistics=False,
-                 get_item_as_dict=False,
-                 image_key=None,
-                 label_key=None):
+                 base_dir: Optional[str] = None,
+                 images: Optional[Union[str, List[str]]] = None,
+                 labels: Optional[Union[str, List[str]]] = None,
+                 file_name_or_dataframe: Union[Optional[str], pd.DataFrame] = None,
+                 calculate_statistics: bool = False,
+                 get_item_as_dict: bool = False,
+                 image_key: Optional[str] = None,
+                 label_key: Optional[str] = None,
+                 load_from_path: Optional[str] = None):
+        """Initializes a dataset module for NIFTI datasets.
+
+        Args:
+            base_dir: The top most base directory that holds all files to be managed/versioned.
+            images: A list of relatives file paths to the images, or a
+                  file path column name for a dataframe/CSV
+            labels: A list of relatives file paths to the image labels/masks, or a
+                  file path column name for a dataframe/CSV
+            file_name_or_dataframe: File path to a CSV (relative to base_dir), or a pandas dataframe
+            calculate_statistics: Whether to calculate dataset statistics on initialization.
+            get_item_as_dict: specifies whether __getitem__ will return (image, label) or {"image": x, "label": y}
+            image_key: The name of the image dict key if get_item_as_dict is True.
+            label_key: The name of the label dict key if get_item_as_dict is True.
+            load_from_path: Path to a pre-existing Worktable dataset base directory.
         """
-        calculate_statistics decides whether to run calculate_statistics() on init
-        """
-        super().__init__(base_dir, images, labels, file_path_or_dataframe,
-                         calculate_statistics, get_item_as_dict, image_key, label_key)
+        super().__init__(base_dir, images, labels, file_name_or_dataframe,
+                         calculate_statistics, get_item_as_dict, image_key, label_key, load_from_path)
 
     def apply_changes(self,
-                      preprocessing=[],
-                      preprocess_labels=True,
-                      recalculate_statistics=True,
-                      input_format="param",
-                      image_key=None,
-                      label_key=None):
+                      preprocessing: List = [],
+                      preprocess_labels: bool = True,
+                      recalculate_statistics: bool = True,
+                      input_format: str = "param",
+                      image_key: Optional[str] = None,
+                      label_key: Optional[str] = None):
 
         # If labels don't exist
         if "labels" not in self.profile:
@@ -94,9 +110,9 @@ class NIFTIDataset(WorktableDataset):
         print("Preprocessing complete.")
 
     def calculate_statistics(self,
-                             foreground_threshold=0,
-                             percentiles=[],
-                             sampling_interval=1):
+                             foreground_threshold: int = 0,
+                             percentiles: List[Union[int, float]] = [],
+                             sampling_interval: int = 1):
 
         self.profile["statistics"] = {}
         self.profile["statistics"]["foreground_threshold"] = foreground_threshold
@@ -188,7 +204,22 @@ class NIFTIDataset(WorktableDataset):
 
         # TODO: Image spacing, Number of classes, Number of pixels/voxels per class
 
-    def __getitem__(self, index):
+    def __getitem__(self,
+                    index: int):
+        """Returns an item at a specific index.
+
+        Args:
+            index: item index
+
+        Returns:
+            If get_item_as_dict is set to True, return a dictionary in the form:
+            {image_key: image, label_key: label} for the image,label pair at index.
+            Otherwise, return:
+            image - the image at the index
+            label - the corresponding label at the index
+
+        """
+
         img_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["images"][index]))
         label_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["labels"][index]))
         image = nib.load(img_path).get_fdata()
@@ -203,4 +234,11 @@ class NIFTIDataset(WorktableDataset):
         return image, label
 
     def __len__(self):
+        """Returns the size of the dataset (number of items).
+
+        Returns:
+            The dataset length/size.
+
+        """
+
         return len(self.profile["images"])

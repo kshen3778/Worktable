@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose
-from typing import Union, List, Optional, Any
+from typing import Union, List, Optional
 
 
 class WorktableDataset(Dataset):
@@ -23,9 +23,9 @@ class WorktableDataset(Dataset):
                  image_key: Optional[str] = None,
                  label_key: Optional[str] = None,
                  load_from_path: Optional[str] = None):
-        """Initializes and creates a Workbench Dataset module that operates on data
+        """Initializes and creates a Worktable Dataset module that operates on data
         in a specific directory specified base_dir.
-        Alternatively, you can load a pre-existing Workbench dataset by
+        Alternatively, you can load a pre-existing Worktable dataset by
         setting load_from_path to its base directory.
 
         Args:
@@ -39,7 +39,7 @@ class WorktableDataset(Dataset):
             get_item_as_dict: specifies whether __getitem__ will return (image, label) or {"image": x, "label": y}
             image_key: The name of the image dict key if get_item_as_dict is True.
             label_key: The name of the label dict key if get_item_as_dict is True.
-            load_from_path: Path to a pre-existing Workbench dataset base directory.
+            load_from_path: Path to a pre-existing Worktable dataset base directory.
 
         """
 
@@ -166,7 +166,7 @@ class WorktableDataset(Dataset):
              name: Optional[str] = None,
              new_save_location: Optional[str] = None):
         """Saves a profile for this dataset.
-        The profile is a .workbench directory that contains all file paths, configurations, transformations,
+        The profile is a .worktable directory that contains all file paths, configurations, transformations,
         metadata, and statistics. Because it contains all the information, it acts as
         a unique identifier for a dataset and when a dataset is loaded, it's profile is read.
         If name is none, a default name from the current timestamp is assigned.
@@ -219,10 +219,10 @@ class WorktableDataset(Dataset):
 
     def load(self,
              path: str):
-        """Load a dataset's profile from a .workbench directory or a path that contains a .workbench directory.
+        """Load a dataset's profile from a .worktable directory or a path that contains a .worktable directory.
 
         Args:
-            path: Path to a .workbench directory or path to a directory that contains a .workbench directory.
+            path: Path to a .worktable directory or path to a directory that contains a .worktable directory.
 
         """
 
@@ -372,10 +372,15 @@ class WorktableDataset(Dataset):
         """
         return NotImplementedError
 
-    def set_label_names(self, names=[]):
+    def set_label_names(self,
+                        names: List[str] = []):
+        """Set the string label names for classes in labels/masks objects
+
+        Args:
+            names: List of string names for the labels in order of classes (0....n)
+
         """
-        Set string names for integer class labels
-        """
+
         return NotImplementedError
 
     def __getitem__(self, index):
