@@ -5,24 +5,40 @@ import json
 import shutil
 
 import numpy as np
-import SimpleITK as sitk
 from worktable.utils import mask_to_contour_set
+from typing import List, Optional, Union
+
 
 class Result:
 
     def __init__(self,
-                 base_dir,
-                 label_names):
-        """
-        base_dir is the output directory that will store all items
+                 base_dir: str,
+                 label_names: Optional[List[str]] = None):
+        """Initializes a Result object that tracks output files,
+        and contains utilities for exporting to different formats.
+        The structure of the Result directory should look like:
         base_dir
             |- item1
                 |- item1.npy (mask file)
             |- item2
                 |- item2.npy
             ... (and so on)
-        label_names are the names of the classes in the segmentation
+
+        Example usage:
+
+        .. code-block:: python
+
+            result = Result(...)
+            # Model inference/training
+            mask = model(img)
+            result.save_item(mask, data_format="mask")
+
+        Args:
+            base_dir: The output directory that will store all model output items.
+            label_names: The string names of the mask labels for segmentation output.
+
         """
+
         self.base_dir = os.path.normpath(base_dir)
 
         # Create base dir if it doesn't already exist
@@ -34,23 +50,20 @@ class Result:
         self.id_counter = 1
 
     def save_item(self,
-                  output,
-                  input=None,
-                  id=None,
-                  format="mask",
+                  output: Union[torch.Tensor, np.ndarray],
+                  input: Optional[Union[torch.Tensor, np.ndarray]] = None,
+                  id: Optional[Union[int, str]] = None,
+                  format: str = "mask",
                   ):
-        """
-        Saves a new item to the base_dir
+        """Saves a new item into the base directory.
 
-        result = Result(...)
-        # Model inference/training
-        mask = model(img)
-        result.save_item(mask, data_format="mask")
+        Args:
+            output: The output torch tensor or numpy array to be saved.
+            input: The original input torch tensor or numpy array that was inputted to the model to get the output.
+            id: Unique identifier/id for this saved item.
+            format: The format to save the item in ("mask" for numpy array, "contour" for contour set format,
+                and "rtstruct" for DICOM RTSTRUCT format.
 
-        output is the output as a numpy array or torch tensor, format is the
-        file type it will save to: mask (default), contour_set, dicom
-        output_id is a unique identifier/name for the item
-        input decides whether to save the original input img
         """
 
         # Convert from tensor to numpy array
@@ -82,25 +95,30 @@ class Result:
 
 
 
-    def export_to(self, data_format, new_base_dir=None, items="all"):
+    def export_to(self,
+                  data_format,
+                  new_base_dir=None,
+                  items="all"):
         """
         exports all items in current base_dir to a different format in a new base_dir
         If new_base_dir is None, create a copy of the item in its original dir with new format
 
         items can be "all" or a list of item_ids to be selected for export
         """
-        pass
+        return NotImplementedError
 
-    def convert_to(self, data_format, items_all):
+    def convert_to(self,
+                   data_format,
+                   items_all):
         """
         Basically the same as export_to except it converts the original copy
         to the new data format specified inplace and doesn't create new files.
         """
-        pass
+        return NotImplementedError
 
     def clear(self):
-        """
-        Clear all contents stored in this Result object as well as files in the directory
+
+        """Clear all contents stored in this Result object as well as files in the directory
         """
         # Reset fields
         self.id_counter = 1
