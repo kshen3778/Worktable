@@ -59,6 +59,7 @@ class NIFTIDataset(WorktableDataset):
                 img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item))
                 img = nib.load(img_path)
 
+            # Apply all preprocessing functions
             for func in preprocessing:
                 if preprocess_labels:
                     if input_format == "tuple":

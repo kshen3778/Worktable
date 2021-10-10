@@ -10,6 +10,6 @@ Dataset Modules
 
 NiftiDataset
 ^^^^^^^^^^^^
-.. autoclass:: workbench.modules.NIFTIDataset
+.. autoclass:: worktable.modules.NIFTIDataset
   :members:
   :inherited-members:
