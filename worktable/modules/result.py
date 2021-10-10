@@ -93,27 +93,33 @@ class Result:
             name = id + ".input.npy"  # save as same name as output
             np.save(os.path.join(self.base_dir, name), input)
 
-
-
     def export_to(self,
-                  data_format,
-                  new_base_dir=None,
-                  items="all"):
-        """
-        exports all items in current base_dir to a different format in a new base_dir
-        If new_base_dir is None, create a copy of the item in its original dir with new format
+                  data_format: str,
+                  new_base_dir: Optional[str] = None,
+                  items: Union[List[Union[str, int]], str] = "all"):
+        """Export items in current base_dir to a different format in a new base_dir
 
-        items can be "all" or a list of item_ids to be selected for export
+        Args:
+            data_format: The new format all items will be exported to ("mask", "contour", or "rtstruct").
+            new_base_dir: The new base directory to export items to. If None, then a copy of each item will be created
+                in the current base directory with the new format.
+            items: A list of ids of items to export. To export all items, leave as "all".
+
         """
+
         return NotImplementedError
 
     def convert_to(self,
-                   data_format,
-                   items_all):
+                   data_format: str,
+                   items: Union[List[Union[str, int]], str] = "all"):
+        """Convert items in the current base directory to another format.
+
+        Args:
+            data_format: The new format all items will be converted to ("mask", "contour", or "rtstruct")
+            items: A list of ids of items to export. To export all items, leave as "all".
+
         """
-        Basically the same as export_to except it converts the original copy
-        to the new data format specified inplace and doesn't create new files.
-        """
+
         return NotImplementedError
 
     def clear(self):
