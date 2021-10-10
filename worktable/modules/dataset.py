@@ -174,6 +174,7 @@ class WorktableDataset(Dataset):
         Args:
             name: Profile file name
             new_save_location: Specify a new location to save the profile file that's not the current base directory.
+                This is used by create_new_version when a new version if created at a new location.
 
         """
 
@@ -320,13 +321,16 @@ class WorktableDataset(Dataset):
         return NotImplementedError
 
     def create_new_version(self,
-                           new_base_dir=None,
-                           name=None,
-                           save_profile=True):
-        """
-        Create a new dataset version on disk (that can be loaded through WorktableDataset)
+                           new_base_dir: Optional[str] = None,
+                           name: Optional[str] = None,
+                           save_profile: bool = True):
+        """Create a new version/copy of the current dataset on disk.
 
-        Save the profile as a worktable (in the new base dir)
+        Args:
+            new_base_dir: The new base directory to create the copy in.
+            name: The new name of the dataset. If None, then a default name based on the timestamp will be assigned.
+            save_profile: Whether to initialize the new copy as a Worktable dataset.
+
         """
 
         new_base_dir = os.path.normpath(new_base_dir)
@@ -351,7 +355,7 @@ class WorktableDataset(Dataset):
                 # default name from timestamp
                 now = datetime.now()
                 name = "version." + str(now.strftime("%Y%m%d-%H%M%S-%f"))
-            self.save(name, new_base_dir)
+            self.save(name, new_base_dir)  # create and save a copy of the original dataset's profile in new location
 
             # Edit in new base dir path
             with open(os.path.join(os.path.abspath(new_base_dir), ".worktable/" + name + ".worktable.json")) \
@@ -364,12 +368,14 @@ class WorktableDataset(Dataset):
 
         print("New dataset version has been created at: ", new_base_dir)
 
-    def get_subset(self, items):
-        """
-        Get a subset of the data and return a WorktableDataset
+    def get_subset(self,
+                   items: List[Union[str, int]]):
+        """Get a subset of the data and return a WorktableDataset
 
-        Items is a list of indices or list of file paths
+        Args:
+            items: A list of indices or list of file paths
         """
+
         return NotImplementedError
 
     def set_label_names(self,
@@ -383,10 +389,30 @@ class WorktableDataset(Dataset):
 
         return NotImplementedError
 
-    def __getitem__(self, index):
+    def __getitem__(self,
+                    index: int):
+        """Returns an item at a specific index.
+
+        Args:
+            index: item index
+
+        Returns:
+            If get_item_as_dict is set to True, return a dictionary in the form:
+            {image_key: image, label_key: label} for the image,label pair at index.
+            Otherwise, return:
+            image - the image at the index
+            label - the corresponding label at the index
+
+        """
         return NotImplementedError
 
     def __len__(self):
+        """Returns the size of the dataset (number of items).
+
+        Returns:
+            The dataset length/size.
+
+        """
         return NotImplementedError
 
 
