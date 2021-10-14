@@ -1,15 +1,41 @@
 from distutils.dir_util import copy_tree
+from itertools import chain
+
 import os
 import json
 import pathlib
 from datetime import datetime
 
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose
 from typing import Union, List, Optional
 
+import SimpleITK as sitk
+
+def read_image(path):
+    img = sitk.ReadImage(path)
+    return img2arr(img)
+
+def img2arr(img: sitk.Image):
+    a = sitk.GetArrayFromImage(img)
+    try:
+        a = np.transpose(a, [-1, -2, -3, -4])
+    except:
+        a = np.transpose(a, [-1, -2, -3])
+    return a
+
+def arr2img(arr, img: sitk.Image):
+    new_img = sitk.GetImageFromArray(arr)
+    new_img.SetOrigin(img.GetOrigin())
+    new_img.SetSpacing(img.GetSpacing())
+    new_img.SetDirection(img.GetDirection())
+
+    for k in img.GetMetaDataKeys():
+        new_img.SetMetaData(k, img.GetMetaData(k))
+    return new_img
 
 class WorktableDataset(Dataset):
 
@@ -285,8 +311,93 @@ class WorktableDataset(Dataset):
                 for percentile calculations.
 
         """
+        self.profile["statistics"] = {}
+        self.profile["statistics"]["foreground_threshold"] = foreground_threshold
+        self.profile["statistics"]["sampling_interval"] = sampling_interval
 
-        return NotImplementedError
+        voxel_sum = 0.0
+        voxel_square_sum = 0.0
+        voxel_max, voxel_min = [], []
+        voxel_ct = 0
+        all_intensities = []
+
+        self.profile["statistics"]["image_statistics"] = []
+
+        dataset = zip(self.profile["images"], self.profile["labels"])
+        for item in dataset:
+            img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
+            label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
+            image = img2arr(sitk.ReadImage(img_path))
+            label = img2arr(sitk.ReadImage(label_path))
+
+            # max/min
+            image_max = image.max().item()
+            image_min = image.min().item()
+
+            voxel_max.append(image_max)
+            voxel_min.append(image_min)
+
+            image_foreground = image[np.where(label > foreground_threshold)]
+            image_voxel_ct = len(image_foreground)
+            if image_voxel_ct == 0:
+                self.profile["statistics"] = {}
+                raise ValueError("No foreground pixels/voxels found for sample: " + label_path +
+                                  " Cannot calculate statistics. "
+                                  "This can be because all positive labels for this sample have been cropped out "
+                                  "or the mask does not have any labels. "
+                                  "Please try setting foreground_threshold = -1")
+            voxel_ct += image_voxel_ct
+
+            image_voxel_sum = image_foreground.sum()
+            voxel_sum += image_voxel_sum
+
+            image_voxel_square_sum = np.square(image_foreground).sum()
+            voxel_square_sum += image_voxel_square_sum
+
+            # mean, std
+            image_mean = (image_voxel_sum / image_voxel_ct).item()
+            image_std = (np.sqrt(image_voxel_square_sum / image_voxel_ct - image_mean ** 2)).item()
+
+            intensities = image[np.where(label > foreground_threshold)].tolist()
+            if sampling_interval > 1:
+                intensities = intensities[::sampling_interval]
+            all_intensities.append(intensities)
+
+            # percentiles
+            image_percentile_values = list(np.percentile(
+                intensities, percentiles
+            ))
+
+            # median
+            image_median = np.median(intensities)
+
+            indiv_stats = {
+                "image": item[0],
+                "label": item[1],
+                "image_shape": list(image.shape),
+                "label_shape": list(label.shape),
+                "max": image_max,
+                "min": image_min,
+                "mean": image_mean,
+                "std": image_std,
+                "percentile": percentiles,
+                "percentile_values": image_percentile_values,
+                "median": image_median
+            }
+            self.profile["statistics"]["image_statistics"].append(indiv_stats)
+
+        # Overall statistics
+        self.profile["statistics"]["max"], self.profile["statistics"]["min"] = max(voxel_max), min(voxel_min)
+        self.profile["statistics"]["mean"] = (voxel_sum / voxel_ct).item()
+        self.profile["statistics"]["std"] = (np.sqrt(voxel_square_sum / voxel_ct -
+                                                     self.profile["statistics"]["mean"] ** 2)).item()
+
+        all_intensities = list(chain(*all_intensities))
+        self.profile["statistics"]["percentile"] = percentiles
+        self.profile["statistics"]["percentile_values"] = list(np.percentile(
+            all_intensities, percentiles
+        ))
+        self.profile["statistics"]["median"] = np.median(all_intensities)
 
     def get_statistics(self):
         """Return the statistics of the dataset previously calculated with calculate_statistics.
@@ -318,7 +429,71 @@ class WorktableDataset(Dataset):
 
         """
 
-        return NotImplementedError
+        # If labels don't exist
+        if "labels" not in self.profile:
+            preprocess_labels = False
+
+        # Loop through dataset
+        dataset = []
+        if preprocess_labels:
+            dataset = zip(self.profile["images"], self.profile["labels"])
+        else:
+            dataset = zip(self.profile["images"])
+
+        for i, item in enumerate(dataset):
+            # Load image as numpy
+            img, label = None, None
+            if preprocess_labels:
+                img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
+                label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
+                img = sitk.ReadImage(img_path)
+                label = sitk.ReadImage(label_path)
+                label_arr = img2arr(label)
+            else:
+                img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item))
+                img = sitk.ReadImage(img_path)
+            
+            print(img.GetSize())
+            img_arr = img2arr(img)
+            
+            print(preprocessing)
+            for func in preprocessing:
+                if preprocess_labels:
+                    if input_format == "tuple":
+                        img_data, label_data = func((img_arr, label_arr))
+                    elif input_format == "dict":
+                        img_data, label_data = func({image_key: img_arr, label_key: label_arr})
+                    else:
+                        img_data, label_data = func(img_arr, label_arr)
+                    
+                else:
+                    img_data = func(img_arr)
+            
+            print(img_data.shape)
+            # Resave image/labels to NIFTI: https://bic-berkeley.github.io/psych-214-fall-2016/saving_images.html
+            img_new = arr2img(img_data, img)
+            img_out_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
+            sitk.WriteImage(img_new, img_out_path)
+
+            if preprocess_labels:
+                label_new = arr2img(label_data, label)
+                label_out_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
+                sitk.WriteImage(label_new, label_out_path)
+
+        # save preprocessing records in profile
+        if "preprocessing" not in self.profile:
+            self.profile["preprocessing"] = []
+        self.profile["preprocessing"].extend(preprocessing)
+
+        if recalculate_statistics and "statistics" in self.profile:
+            self.calculate_statistics(
+                foreground_threshold=self.profile["statistics"]["foreground_threshold"],
+                percentiles=self.profile["statistics"]["percentile"],
+                sampling_interval=self.profile["statistics"]["sampling_interval"]
+                                      )
+        else:
+            print("Please run calculate_statistics() again for updated statistics.")
+        print("Preprocessing complete.")
 
     def create_new_version(self,
                            new_base_dir: Optional[str] = None,
@@ -404,7 +579,18 @@ class WorktableDataset(Dataset):
             label - the corresponding label at the index
 
         """
-        return NotImplementedError
+        img_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["images"][index]))
+        label_path = os.path.join(self.profile["base_dir"], os.path.normpath(self.profile["labels"][index]))
+        image = read_image(img_path)
+        label = read_image(label_path)
+
+        # TODO: call transformations here (apply either train / inference transforms option)
+        if self.profile["get_item_as_dict"]:
+            # return as dictionary
+            item = {self.profile["get_item_keys"]["image_key"]: image,
+                    self.profile["get_item_keys"]["label_key"]: label}
+            return item
+        return image, label
 
     def __len__(self):
         """Returns the size of the dataset (number of items).
@@ -413,7 +599,7 @@ class WorktableDataset(Dataset):
             The dataset length/size.
 
         """
-        return NotImplementedError
+        return len(self.profile["images"])
 
 
 
