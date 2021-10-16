@@ -16,7 +16,7 @@ from typing import Union, List, Optional
 import SimpleITK as sitk
 
 def read_image(path):
-    img = sitk.ReadImage(path)
+    img = sitk.ReadImage(path, sitk.sitkFloat64)
     return img2arr(img)
 
 def img2arr(img: sitk.Image):
@@ -27,8 +27,13 @@ def img2arr(img: sitk.Image):
         a = np.transpose(a, [-1, -2, -3])
     return a
 
-def arr2img(arr, img: sitk.Image):
-    new_img = sitk.GetImageFromArray(arr)
+def arr2img(a, img: sitk.Image):
+    try:
+        a = np.transpose(a, [-1, -2, -3, -4])
+    except:
+        a = np.transpose(a, [-1, -2, -3])
+
+    new_img = sitk.GetImageFromArray(a)
     new_img.SetOrigin(img.GetOrigin())
     new_img.SetSpacing(img.GetSpacing())
     new_img.SetDirection(img.GetDirection())
@@ -327,9 +332,8 @@ class WorktableDataset(Dataset):
         for item in dataset:
             img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
             label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
-            image = img2arr(sitk.ReadImage(img_path))
-            label = img2arr(sitk.ReadImage(label_path))
-
+            image = read_image(img_path)
+            label = read_image(label_path)
             # max/min
             image_max = image.max().item()
             image_min = image.min().item()
@@ -446,17 +450,15 @@ class WorktableDataset(Dataset):
             if preprocess_labels:
                 img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
                 label_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[1]))
-                img = sitk.ReadImage(img_path)
-                label = sitk.ReadImage(label_path)
+                img = sitk.ReadImage(img_path, sitk.sitkFloat64)
+                label = sitk.ReadImage(label_path, sitk.sitkFloat64)
                 label_arr = img2arr(label)
             else:
                 img_path = os.path.join(self.profile["base_dir"], os.path.normpath(item))
-                img = sitk.ReadImage(img_path)
+                img = sitk.ReadImage(img_path, sitk.sitkFloat64)
             
-            print(img.GetSize())
             img_arr = img2arr(img)
             
-            print(preprocessing)
             for func in preprocessing:
                 if preprocess_labels:
                     if input_format == "tuple":
@@ -469,7 +471,6 @@ class WorktableDataset(Dataset):
                 else:
                     img_data = func(img_arr)
             
-            print(img_data.shape)
             # Resave image/labels to NIFTI: https://bic-berkeley.github.io/psych-214-fall-2016/saving_images.html
             img_new = arr2img(img_data, img)
             img_out_path = os.path.join(self.profile["base_dir"], os.path.normpath(item[0]))
