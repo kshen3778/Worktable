@@ -1,15 +1,15 @@
 Modules
 =======
-WorkBench Modules.
+Worktable Modules.
 
 .. contents:: Contents
     :local:
 
-Dataset Modules
+Modules
 ---------------
 
-NiftiDataset
+WorktableDataset
 ^^^^^^^^^^^^
-.. autoclass:: worktable.modules.NIFTIDataset
+.. autoclass:: worktable.modules.WorktableDataset
   :members:
   :inherited-members:
