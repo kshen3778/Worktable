@@ -1,2 +1,2 @@
-from .nifti_dataset import NIFTIDataset
+from .dataset import WorktableDataset
 
