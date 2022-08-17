@@ -12,7 +12,3 @@ Worktable is a data assistant and utilities library for creating medical machine
 - [Dataset Modules](https://github.com/kshen3778/Worktable/tree/main/examples/Dataset_Example.ipynb)
 
 ## Documentation
-
-## About Us
-
-Development Team: Kevin Shen, Joseph Marsilla, Sejin Kim
